@@ -1,0 +1,149 @@
+---
+title: "03 – Are the mutants what we think they are?"
+subtitle: "Bio253 HS2026 · validating stk1::Tn and stp1::Tn"
+---
+
+**Goal:** before you interpret any "stk vs anc" or "stp vs anc" difference, check
+that the mutant strains really lack the protein they are supposed to lack – and
+*only* that one. This is routine in every good proteomics project.
+
+The two mutants come from the Nebraska Transposon Mutant Library (NTML):
+a transposon (Tn) inserted into *stk1* (kinase, also called *pknB*) or *stp1*
+(phosphatase). In the genome, *stp1* lies directly upstream of *stk1*.
+
+```{r setup}
+source("../R/setup.R")
+abundances <- read_abundances("total")
+dea <- read_dea("total")
+```
+
+## 1. Find Stk1 and Stp1
+
+```{r find}
+KEY_PROTEINS |> filter(short_name %in% c("Stk1", "Stp1"))
+find_protein(c("B7H15_06350", "B7H15_06355")) |>
+  select(locus_tag, product, protein_id, location, staa8_uniprot)
+```
+
+**Question:** look at the `location` column. Which gene comes first? Do they overlap?
+
+## 2. Prediction
+
+Write down **before** plotting:
+
+| strain | Stp1 expected | Stk1 expected |
+|---|---|---|
+| anc | present | present |
+| stk | ? | ? |
+| stp | ? | ? |
+
+## 3. Per-sample abundances
+
+```{r plot, fig.width=10, fig.height=4}
+plot_protein(c("B7H15_06350", "B7H15_06355"), abundances)
+```
+
+```{r table}
+abundances |>
+  filter(locus_tag %in% c("B7H15_06350", "B7H15_06355")) |>
+  mutate(protein = if_else(locus_tag == "B7H15_06350", "Stp1", "Stk1")) |>
+  select(protein, sample, normalized_abundance) |>
+  pivot_wider(names_from = protein, values_from = normalized_abundance) |>
+  mutate(across(where(is.numeric), \(v) round(v, 1)))
+```
+
+**Questions**
+
+1. Is Stk1 gone in `stk`? Is it gone in *every* `stk` sample? (Look closely at
+   each replicate.)
+2. What happens to **Stk1 in the `stp` strain**? Was that in your prediction?
+3. Is Stp1 gone in `stp`? How consistent are the replicates? Are some values as
+   high as in the wild type? What could explain that (think: sample mix-up,
+   carry-over, revertants, mixed culture, peptide mis-assignment)?
+4. Is Stp1 changed in `stk`?
+
+## 4. The DEA view – and why it can mislead here
+
+```{r dea}
+dea |>
+  filter(locus_tag %in% c("B7H15_06350", "B7H15_06355"),
+         str_detect(contrast, "^(stk|stp)_vs_anc_at_")) |>
+  mutate(protein = if_else(locus_tag == "B7H15_06350", "Stp1", "Stk1")) |>
+  transmute(protein, contrast, diff = round(diff, 2), FDR = signif(FDR, 2), estimate_type) |>
+  arrange(protein, contrast)
+```
+
+**Question:** Several rows are `lod_imputed`. What does a log2FC of, say, −5 mean
+when one group was *never measured*? Why might the FDR of the "absent" protein be
+less impressive than you expect?
+
+## 5. A polar effect? Look at the neighbours
+
+Transposon insertions can disturb the expression of genes **downstream in the
+same operon** (polar effect). If *stp1::Tn* reduces Stk1, the neighbourhood
+should tell us more.
+
+```{r neighbours, fig.width=11, fig.height=6}
+neighbours <- sprintf("B7H15_%05d", seq(6335, 6370, by = 5))
+read_annotation() |>
+  filter(locus_tag %in% neighbours) |>
+  select(locus_tag, product, location)
+
+plot_protein(neighbours, abundances)
+```
+
+**Questions**
+
+* Which neighbours are unaffected in `stp`? Which are affected?
+* Is "polar effect of the Tn insertion" the only explanation for low Stk1 in
+  `stp`? (Alternatives: Stk1 protein unstable without Stp1, autoregulation,
+  a second mutation in the strain …)
+* What would you check in the lab? (e.g. PCR / sequencing of the insertion site,
+  RT-qPCR of *stk1*, complementation strain)
+* **Consequence:** if `stp` lacks *both* Stp1 and (mostly) Stk1, how should you
+  interpret any `stp_vs_anc` result in the other notebooks?
+
+## 6. Phospho sites on Stk1 and Stp1
+
+Stk1 phosphorylates itself (autophosphorylation in its activation loop). If Stk1
+is absent, its phospho-sites should be absent, too.
+
+```{r sites}
+sites <- read_sites("STYH")
+stk_stp_sites <- sites |>
+  filter(locus_tag %in% c("B7H15_06350", "B7H15_06355"))
+
+stk_stp_sites |>
+  group_by(locus_tag, site_id, residue, position, best_loc_prob, group) |>
+  summarise(n = sum(!is.na(intensity)), .groups = "drop") |>
+  pivot_wider(names_from = group, values_from = n, values_fill = 0) |>
+  mutate(site = paste0(residue, position)) |>
+  select(locus_tag, site, best_loc_prob, any_of(GROUPS)) |>
+  arrange(locus_tag, as.integer(str_extract(site, "[0-9]+")))
+```
+
+Numbers = in how many of the 3 replicates the site was detected.
+
+```{r plot-sites, fig.width=11, fig.height=7}
+plot_sites(unique(stk_stp_sites$site_id), sites)
+```
+
+**Questions**
+
+* Which Stk1 residues are phosphorylated in the wild type? Where are they in the
+  protein (look up the kinase domain / activation loop of PknB, UniProt Q2FZ64
+  is the NCTC8325 ortholog)?
+* Are any Stk1 phospho-sites detected in the `stk` strain? If yes – where in the
+  protein are they, and what could that say about **where** the transposon sits
+  (a truncated protein?) or about the sample?
+* Are there phospho-sites on Stp1 at all?
+* One site is on a histidine. Keep it in mind for notebook 05.
+
+## 7. Summary for your lab notebook
+
+Write 3–5 sentences: which strain is a clean mutant, which is not, and what this
+means for the hypotheses you want to test.
+
+```{r session}
+sessionInfo()
+```

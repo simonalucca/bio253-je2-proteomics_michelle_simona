@@ -1,0 +1,72 @@
+---
+title: "06 – Your question"
+subtitle: "Bio253 HS2026 · group: ______ (names: ______)"
+---
+
+Copy this file (e.g. `07_groupX_my_question.qmd`) and fill in every section.
+Keep it short and honest. A clear negative result is a good result.
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Question
+
+*One sentence. What do you want to know?*
+
+## 2. Hypothesis
+
+* **H1:** …
+* **H0:** …
+* **Prediction:** which contrast / sites / proteins, which sign of `diff`, which
+  minimal effect size would you call relevant? (Write this *before* looking.)
+
+```{r contrast-meaning}
+# Check the direction of the contrast you will use, e.g.
+explain_contrast("TSB_vs_SN_at_anc")
+```
+
+## 3. Data used
+
+*Which tables (total proteome / phospho STY / STYH / site tables), which samples,
+which filters (e.g. contaminants removed, ≥ 2/3 replicates)?*
+
+```{r data}
+abundances <- read_abundances("total")
+dea <- read_dea("total")
+```
+
+## 4. Methods
+
+*What did you compute and why? Which R functions / packages? If an AI agent wrote
+code for you: what did you check yourself?*
+
+## 5. Results
+
+Always start with the raw per-sample values:
+
+```{r raw-values}
+# plot_protein("B7H15_13375", abundances)
+```
+
+```{r results}
+# your analysis here
+```
+
+## 6. Caveats
+
+*Missing values / imputation? Only 3 replicates? Multiple testing? Is the `stp`
+strain a clean mutant (notebook 03)? Protein abundance vs activity? Batch effects
+(re-injected samples)?*
+
+## 7. Conclusion and next steps
+
+*Answer your question in 2–3 sentences. What experiment or analysis would you do next?*
+
+## 8. Sources
+
+*Papers, databases (UniProt IDs, STRING), and AI tools used – with what for.*
+
+```{r session}
+sessionInfo()
+```

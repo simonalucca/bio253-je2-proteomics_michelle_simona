@@ -1,0 +1,243 @@
+---
+title: "05 – Does S. aureus phosphorylate histidine?"
+subtitle: "Bio253 HS2026 · STY vs STYH search, judged conservatively"
+---
+
+**Claim to test:** Prust *et al.* 2021 (*Mol Cell Proteomics* 20:100034) report that
+~8 % of all *S. aureus* phospho-sites are on **histidine** (pHis). Can we see pHis
+in our data – and how sure can we be?
+
+The raw files were searched twice:
+
+* **STY** – phosphorylation allowed on Ser, Thr, Tyr
+* **STYH** – additionally on His
+
+::: {.callout-important}
+## Be sceptical – on purpose
+* pHis is **acid-labile**. Our workflow (Fe-IMAC enrichment, acidic LC) is not
+  pHis-friendly, so many pHis may be lost – and the ones we "see" need extra scrutiny.
+* The main source of false pHis is **mis-localisation**: if a peptide also contains
+  S, T or Y, the search engine may put the phosphate on H although it sits on a
+  neighbour – or the other way round.
+* Allowing H as an extra acceptor makes the search space bigger, which by itself
+  creates some extra (false) hits.
+
+We therefore treat pHis **very conservatively**. You will build evidence tiers yourself.
+:::
+
+```{r setup}
+source("../R/setup.R")
+# keep contaminants here: we want the complete peptide lists of both searches
+styh <- read_sites("STYH", drop_contaminants = FALSE)
+sty  <- read_sites("STY",  drop_contaminants = FALSE)
+```
+
+## 1. How many sites per residue in the two searches?
+
+```{r residues}
+bind_rows(styh, sty) |>
+  distinct(search, site_id, residue) |>
+  count(search, residue) |>
+  pivot_wider(names_from = search, values_from = n, values_fill = 0)
+```
+
+**Question:** the STYH search finds more sites in total. Are the additional sites
+only His sites, or do S/T/Y counts also change? Why might they?
+
+## 2. Localisation probability
+
+`best_loc_prob` = best localisation probability of a site over all samples
+(1 = the search engine is sure the phosphate sits on exactly this residue).
+
+```{r lp-distribution, fig.height=4}
+site_level <- distinct(styh, site_id, residue, best_loc_prob)
+
+ggplot(site_level, aes(best_loc_prob, colour = residue)) +
+  stat_ecdf(linewidth = 0.8) +
+  geom_vline(xintercept = 0.75, linetype = "dashed") +
+  labs(x = "best localisation probability", y = "fraction of sites with LP <= x",
+       title = "STYH search: localisation probability per residue")
+
+site_level |>
+  mutate(lp_class = lp_class(best_loc_prob)) |>
+  count(residue, lp_class) |>
+  pivot_wider(names_from = lp_class, values_from = n, values_fill = 0)
+```
+
+**Question:** Are His sites localised as well as S/T/Y sites? How many His sites
+have LP ≥ 0.75?
+
+## 3. One evidence table for every His site
+
+We now collect, for every His site, the evidence we need. Read each step.
+
+### 3a. Sites, localisation and reproducibility
+
+**Reproducibility is judged from the intensity** (detected = intensity > 0), not from
+the per-sample localisation probabilities: FragPipe sometimes reports an LP for a
+sample in which the site was *not quantified*.
+
+```{r lp-filled}
+styh |>
+  filter(residue == "H") |>
+  summarise(sample_rows = n(),
+            quantified = sum(!is.na(intensity)),
+            LP_reported_but_not_quantified = sum(is.na(intensity) & loc_prob_fragpipe > 0,
+                                                 na.rm = TRUE))
+```
+
+```{r evidence-1}
+his <- styh |>
+  filter(residue == "H") |>
+  group_by(site_id, locus_tag, product, peptide, best_loc_prob) |>
+  summarise(
+    n_samples_quant = sum(!is.na(intensity)),                  # of 27
+    n_samples_lp075 = sum(loc_prob_fragpipe >= 0.75, na.rm = TRUE),  # FragPipe LPs, for reference only
+    max_reps_in_group = max(tapply(!is.na(intensity), group, sum)),  # best group, of 3
+    .groups = "drop") |>
+  mutate(lp_class = lp_class(best_loc_prob))
+nrow(his)
+```
+
+### 3b. Is there an alternative acceptor on the peptide?
+
+If the peptide contains **no S, T or Y at all**, the phosphate cannot be
+mis-placed onto a neighbouring S/T/Y. That is the strongest kind of evidence we can
+get from the search alone. A `Peptide` entry can contain several sequence variants
+separated by `;` – we take the variant with the fewest S/T/Y.
+
+```{r evidence-2}
+peptide_variants("ANhEQIIEAIK;MANhEQIIEAIK")   # example: two variants, upper-cased
+n_sty_acceptors("ANhEQIIEAIK;MANhEQIIEAIK")
+
+his <- his |>
+  mutate(n_sty_acceptors = n_sty_acceptors(peptide),
+         no_alt_acceptor = n_sty_acceptors == 0,
+         co_phospho_STY  = co_phospho_sty(peptide))
+count(his, no_alt_acceptor)
+```
+
+### 3c. Does the STY-only search explain the same peptide?
+
+If the very same peptide was also identified as a phosphopeptide in the STY search,
+the spectrum can be explained **without** pHis. FragPipe writes phospho residues in
+lower case, so we compare upper-cased sequences. We count a His peptide as
+"explained" only if **all** its variants appear in the STY search.
+
+```{r evidence-3}
+sty_peptides <- phosphopeptide_set(sty)
+his <- his |>
+  mutate(seen_in_STY_search   = all_variants_in(peptide, sty_peptides),
+         partly_in_STY_search = any_variant_in(peptide, sty_peptides))
+count(his, no_alt_acceptor, seen_in_STY_search)
+```
+
+## 4. Worked example: HPr His15
+
+HPr (phosphocarrier protein of the PTS sugar uptake system) carries a **textbook
+pHis at His15** – the phosphate is transferred from enzyme I to HPr-His15 and on to
+sugar transporters. If we find any real pHis, HPr should be a candidate.
+
+```{r hpr-find}
+hpr <- find_protein("B7H15_05615") |> select(locus_tag, product, protein_key, staa8_uniprot)
+hpr
+```
+
+The same HPr peptide in the two searches:
+
+```{r hpr-compare}
+hpr_peptide <- "MEQNSYVIIDETGIHAR"
+bind_rows(styh, sty) |>
+  filter(protein_key %in% hpr$protein_key,
+         str_detect(toupper(peptide), hpr_peptide)) |>
+  group_by(search, site_id, residue, position, peptide, best_loc_prob) |>
+  summarise(n_samples_quant = sum(!is.na(intensity)), .groups = "drop") |>
+  arrange(search, position)
+```
+
+**Questions**
+
+* In the STY search, where is the phosphate placed on this peptide? In STYH?
+* Which interpretation is chemically / biologically more plausible, and why?
+* Is the STY-search interpretation "wrong" – or simply the best it could do without H?
+* Does this single example prove that pHis survives our workflow?
+
+## 5. His sites on proteins that *should* carry pHis
+
+Classical pHis proteins in bacteria: **histidine kinases** of two-component systems
+(autophosphorylation on His, transfer to Asp of the response regulator – note:
+pAsp was not searched), **HPr** and **enzyme I** of the PTS, and some metabolic
+enzymes (e.g. succinyl-CoA synthetase, nucleoside-diphosphate kinase).
+
+```{r canonical}
+canonical_pattern <- "histidine kinase|phosphocarrier|PTS|phosphoenolpyruvate|response regulator|succinate--CoA|nucleoside-diphosphate kinase"
+find_protein(canonical_pattern) |> count(product, sort = TRUE)
+
+his |>
+  filter(str_detect(product, regex(canonical_pattern, ignore_case = TRUE))) |>
+  select(locus_tag, product, site_id, peptide, best_loc_prob, n_sty_acceptors,
+         seen_in_STY_search, max_reps_in_group)
+```
+
+**Question:** Do any histidine kinases show a His site? Is the site at the
+conserved, autophosphorylated His (look at the protein in UniProt via
+`staa8_uniprot`)? What about the many His sites on proteins that are *not* known
+pHis proteins?
+
+## 6. Your task: build confidence tiers
+
+Combine the evidence into **tiers**, from "strongest candidate" to "unreliable".
+Suggested criteria (you decide the order and thresholds – and justify them!):
+
+| evidence | column |
+|---|---|
+| no alternative S/T/Y acceptor on the peptide | `no_alt_acceptor` |
+| well localised | `best_loc_prob >= 0.75` |
+| reproducible: ≥ 2 of 3 replicates in some group | `max_reps_in_group >= 2` |
+| peptide **not** explained by the STY search | `!seen_in_STY_search` |
+
+Write your tiers below (set `eval: true` once you filled in the conditions).
+Number tiers 1 (strongest) to 6 (weakest) and **start every label with the number**.
+
+```{r my-tiers}
+#| eval: false
+my_tiers <- his |>
+  mutate(tier = case_when(
+    no_alt_acceptor & ______ & ______  ~ "1 strongest: ...",
+    no_alt_acceptor & ______           ~ "2 ...",
+    no_alt_acceptor                    ~ "3 ...",
+    ______ & !seen_in_STY_search       ~ "4 ...",
+    ______                             ~ "5 ...",
+    TRUE                               ~ "6 unreliable"))
+count(my_tiers, tier)
+```
+
+Check your tiers against the lecturer's reference (counts only – it tells you
+*how many* sites agree, not *which*):
+
+```{r check}
+#| eval: false
+check_his_tiers(my_tiers)
+```
+
+## 7. Real or artefact? A decision framework
+
+For each candidate, go through this list and write your verdict in your lab notebook.
+
+1. **Chemistry:** acid-labile pHis + acidic workflow → is it plausible the site survived?
+2. **Localisation:** LP ≥ 0.75? Any S/T/Y on the peptide? Same peptide explained by STY?
+3. **Reproducibility:** seen in ≥ 2/3 replicates of a group? In more than one group?
+4. **Biology:** is the protein a known His-phosphorylated protein? Is the His conserved?
+5. **Spectra:** (beyond this course, but name it) inspect the MS2 spectra – are there
+   fragment ions that pin the phosphate to H? pHis shows characteristic neutral
+   losses (e.g. −80, −98, −116 Da).
+6. **Orthogonal validation:** pHis-specific antibodies, non-acidic enrichment, mutation
+   of the His.
+
+**Discussion:** after this analysis, how would you phrase our evidence for (or against)
+the claim of Prust *et al.*? Distinguish "we found no evidence" from "we found evidence
+of absence".
+
+```{r session}
+sessionInfo()
+```

@@ -1,0 +1,241 @@
+---
+title: "04 – Sparse phospho data: two roadmaps"
+subtitle: "Bio253 HS2026 · reproducible vs exploratory"
+---
+
+The phospho-enriched data are **sparse**: most sites are seen in only a few of the
+27 samples. There are two honest ways to deal with that:
+
+* **Roadmap A – reproducible:** only use sites seen in **≥ 2 of 3 replicates** of a
+  group. Fewer sites, but you can estimate variance and do statistics.
+* **Roadmap B – exploratory:** use every site seen in **≥ 1 of 3** replicates and
+  think in *present / absent*. Many more sites, many more false leads. Good for
+  generating hypotheses, not for confirming them.
+
+```{r setup}
+source("../R/setup.R")
+SEARCH <- "STYH"   # change to "STY" to repeat everything on the STY-only search
+sites <- read_sites(SEARCH)
+```
+
+## 1. How sparse?
+
+```{r sparsity}
+tibble(
+  search = SEARCH,
+  n_sites = n_distinct(sites$site_id),
+  n_samples = n_distinct(sites$sample),
+  percent_missing = round(100 * mean(is.na(sites$intensity)), 1)
+)
+```
+
+## 2. Detection depth per sample and group
+
+```{r depth, fig.height=4}
+depth <- sites |>
+  group_by(sample, genotype, medium, group, reinjected) |>
+  summarise(n_sites = sum(!is.na(intensity)), .groups = "drop")
+
+ggplot(depth, aes(group, n_sites, colour = genotype, shape = reinjected)) +
+  geom_point(size = 2.5, position = position_jitter(width = 0.1, seed = 1)) +
+  scale_colour_manual(values = GENOTYPE_COLOURS) +
+  scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 17)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL, y = "phospho-sites detected per sample",
+       shape = "re-injected\n(stk_pulseSN_1/2)")
+
+depth |>
+  group_by(group) |>
+  summarise(mean_sites = round(mean(n_sites)), min = min(n_sites), max = max(n_sites))
+```
+
+**Questions**
+
+* How different are the groups? Is the difference biological (more
+  phosphorylation in SN?) or technical (enrichment efficiency, injection amount,
+  instrument day)? How could you tell the two apart?
+* If a site is "missing" in the shallow groups, is it *not phosphorylated* or
+  just *not detected*? → Missing **not** at random (MNAR). What does that do to
+  a "TSB vs SN" comparison?
+
+## 3. Count detections per site and group
+
+```{r per-group}
+per_group <- sites |>
+  group_by(site_id, locus_tag, product, residue, position, best_loc_prob, group) |>
+  summarise(n_detected = sum(!is.na(intensity)), .groups = "drop")
+
+roadmaps <- per_group |>
+  group_by(site_id, residue) |>
+  summarise(max_detected = max(n_detected), .groups = "drop") |>
+  mutate(roadmap_A_reproducible = max_detected >= 2,
+         roadmap_B_exploratory  = max_detected >= 1)
+
+roadmaps |>
+  summarise(all_sites = n(),
+            roadmap_A_reproducible = sum(roadmap_A_reproducible),
+            roadmap_B_exploratory = sum(roadmap_B_exploratory))
+```
+
+### Sites per residue
+
+```{r residues}
+roadmaps |>
+  group_by(residue) |>
+  summarise(roadmap_B_exploratory = sum(roadmap_B_exploratory),
+            roadmap_A_reproducible = sum(roadmap_A_reproducible)) |>
+  mutate(percent_A = round(100 * roadmap_A_reproducible / sum(roadmap_A_reproducible), 1),
+         percent_B = round(100 * roadmap_B_exploratory / sum(roadmap_B_exploratory), 1))
+```
+
+**Question:** Prust *et al.* 2021 (*MCP*) report for *S. aureus* 55 % pS, 30 % pT,
+7 % pY, 8 % pH. How does our distribution compare? Does the localisation
+probability filter change it? (Try `filter(best_loc_prob >= 0.75)`.)
+
+## 4. Simple normalisation
+
+Different samples have different total phospho signal. A minimal correction:
+subtract each sample's median log2 intensity (median centring). This assumes most
+sites do not change – which is shaky when samples see very different numbers of
+sites. Keep that in mind.
+
+```{r normalise}
+sites <- sites |>
+  group_by(sample) |>
+  mutate(log2_norm = log2_intensity - median(log2_intensity, na.rm = TRUE)) |>
+  ungroup()
+```
+
+## 5. Roadmap A: statistics on reproducible sites
+
+Comparison 1: anc TSB vs anc SN (long-term). Comparison 2: anc TSB vs anc SNpulse
+(15 min). We keep sites with ≥ 2 of 3 values **in both groups** and use `limma`.
+
+```{r roadmap-a}
+library(limma)
+
+compare_reproducible <- function(sites, group_a, group_b, min_per_group = 2) {
+  x <- filter(sites, group %in% c(group_a, group_b))
+  keep <- x |>
+    group_by(site_id, group) |>
+    summarise(n = sum(!is.na(log2_norm)), .groups = "drop") |>
+    group_by(site_id) |>
+    filter(n_distinct(group) == 2, all(n >= min_per_group)) |>
+    pull(site_id) |> unique()
+  wide <- x |>
+    filter(site_id %in% keep) |>
+    select(site_id, sample, log2_norm) |>
+    pivot_wider(names_from = sample, values_from = log2_norm)
+  m <- as.matrix(wide[, -1]); rownames(m) <- wide$site_id
+  grp <- factor(x$group[match(colnames(m), x$sample)], levels = c(group_a, group_b))
+  design <- model.matrix(~ grp)          # coefficient 2 = group_b - group_a
+  fit <- eBayes(lmFit(m, design))
+  topTable(fit, coef = 2, number = Inf) |>
+    as_tibble(rownames = "site_id") |>
+    # flip the sign so that diff follows the course rule: A_vs_B = A - B
+    transmute(site_id, contrast = paste0(group_a, "_vs_", group_b),
+              diff = -logFC, p.value = P.Value, FDR = p.adjust(P.Value, "BH"))
+}
+
+res_a <- bind_rows(
+  compare_reproducible(sites, "anc_TSB", "anc_SN"),
+  compare_reproducible(sites, "anc_TSB", "anc_SNpulse")
+)
+res_a |>
+  group_by(contrast) |>
+  summarise(sites_tested = n(),
+            FDR_below_0.1 = sum(FDR < 0.1),
+            FDR_below_0.1_and_2fold = sum(FDR < 0.1 & abs(diff) > 1))
+```
+
+```{r roadmap-a-volcano, fig.height=4}
+ggplot(res_a, aes(diff, -log10(p.value), colour = FDR < 0.1)) +
+  geom_point(alpha = 0.6) +
+  facet_wrap(~contrast) +
+  scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "#D55E00")) +
+  labs(x = "diff (log2, A - B; positive = higher in TSB)", y = "-log10(p)")
+```
+
+## 6. Roadmap B: presence / absence
+
+For each site and comparison: in how many replicates of A and of B is it seen?
+
+```{r roadmap-b}
+presence_absence <- function(per_group, group_a, group_b) {
+  per_group |>
+    filter(group %in% c(group_a, group_b)) |>
+    select(site_id, locus_tag, product, residue, position, group, n_detected) |>
+    pivot_wider(names_from = group, values_from = n_detected) |>
+    rename(n_A = all_of(group_a), n_B = all_of(group_b)) |>
+    filter(n_A + n_B > 0) |>
+    mutate(contrast = paste0(group_a, "_vs_", group_b),
+           pattern = case_when(n_A >= 1 & n_B == 0 ~ "only in A",
+                               n_B >= 1 & n_A == 0 ~ "only in B",
+                               TRUE ~ "in both"))
+}
+
+res_b <- bind_rows(presence_absence(per_group, "anc_TSB", "anc_SN"),
+                   presence_absence(per_group, "anc_TSB", "anc_SNpulse"))
+
+res_b |> count(contrast, pattern) |>
+  pivot_wider(names_from = pattern, values_from = n)
+```
+
+How convincing is "only in A"? A 3-vs-0 pattern is much stronger than 1-vs-0:
+
+```{r roadmap-b-strength}
+res_b |>
+  filter(pattern != "in both") |>
+  mutate(strength = if_else(pattern == "only in A", paste0(n_A, " vs 0"), paste0("0 vs ", n_B))) |>
+  count(contrast, pattern, strength) |>
+  pivot_wider(names_from = strength, values_from = n, values_fill = 0)
+```
+
+The strongest candidates (3 vs 0) for the long-term comparison:
+
+```{r roadmap-b-top}
+res_b |>
+  filter(contrast == "anc_TSB_vs_anc_SN", (n_A == 3 & n_B == 0) | (n_A == 0 & n_B == 3)) |>
+  mutate(site = paste0(residue, position)) |>
+  select(pattern, locus_tag, product, site, n_A, n_B) |>
+  arrange(pattern, locus_tag)
+```
+
+::: {.callout-warning}
+## Presence/absence and the depth problem
+anc_SN samples detect roughly **twice as many** sites as the other ancestor
+groups. So "only in SN" is *expected* for many sites even if nothing biological
+happens. How would you correct for that? (Ideas: compare to the number of
+"only in" sites you get for random sample groupings; require the site's protein
+to be detected in both groups in the total proteome; look at intensity – sites
+that are "absent" in TSB but very intense in SN are more convincing than faint ones.)
+:::
+
+## 7. Compare with the prolfquapp DEA
+
+The lecturer's DEA (`read_dea("phospho_STYH")`) uses all sites and **imputes**
+missing group means. How many of its "hits" rest on imputed values?
+
+```{r prolfqua}
+dea_p <- read_dea(paste0("phospho_", SEARCH))
+dea_p |>
+  filter(contrast %in% c("TSB_vs_SN_at_anc", "TSB_vs_SNpulse_at_anc")) |>
+  group_by(contrast) |>
+  summarise(sites = n(),
+            hits = sum(FDR < 0.1 & abs(diff) > 1),
+            hits_observed = sum(FDR < 0.1 & abs(diff) > 1 & estimate_type == "observed"),
+            hits_imputed = sum(FDR < 0.1 & abs(diff) > 1 & estimate_type == "lod_imputed"))
+```
+
+**Questions**
+
+* Do roadmap A and the prolfquapp DEA agree for the sites that both test?
+  (Hint: join `res_a` with `dea_p` by `site_id`; mind the contrast names.)
+* A phospho-site intensity changes if the *phosphorylation* changes **or** if the
+  *protein amount* changes. TSB vs SN changes ~450 proteins (notebook 01). How
+  would you correct site intensities for protein abundance?
+* Which roadmap would you use to **confirm** a hypothesis, which to **find** one?
+
+```{r session}
+sessionInfo()
+```

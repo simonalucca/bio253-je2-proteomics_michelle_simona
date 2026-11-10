@@ -1,0 +1,259 @@
+---
+title: "02 – Hypothesis test: is TcyABC down-regulated in PASN?"
+subtitle: "Bio253 HS2026 · flagship exercise"
+---
+
+::: {.callout-note}
+## How to use this notebook
+Work through it **top to bottom** and write your answers into the boxes marked
+*Your answer*. Do not jump to the discussion before you have looked at the data
+yourself. There is no "right" answer pre-written here – the data decide.
+:::
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Background
+
+*S. aureus* takes up the amino acid L-cystine with the ABC transporter **TcyABC**
+(TcyA = substrate-binding protein, TcyB = permease, TcyC = ATPase; one operon, *tcyABC*).
+
+In **Schwyter et al. 2025, *mSystems*** (doi:10.1128/msystems.00262-25) JE2 was evolved
+in medium containing cell-free, sterile-filtered spent medium of *Pseudomonas aeruginosa*
+PAO1 ("PA supernatant", PASN). *S. aureus* never met living *P. aeruginosa*: it only
+sees the molecules *P. aeruginosa* secreted (e.g. HQNO, PQS, pyocyanin, siderophores,
+proteases) – and a medium that is partly depleted of nutrients. An evolved isolate carried a
+frameshift in *tcyA*; in its proteome TcyA was almost gone (log2FC −5.95 vs the
+ancestor) and TcyB was reduced (−2.86), probably a polar effect. A non-functional
+transporter gave partial protection against toxic compounds from *P. aeruginosa*
+(selenocystine, PQS) – presumably because they enter the cell through TcyABC.
+
+This leads to an idea: *maybe the ancestor already down-regulates TcyABC when it
+is exposed to PASN – a fast, plastic version of what evolution did genetically?*
+
+## 2. Formulate the hypothesis
+
+Before you look at any number, write down:
+
+* **H1 (your hypothesis):** in the ancestor (anc), TcyA/B/C abundance is ______ in SN than in TSB.
+* **H0 (null hypothesis):** ______
+* **Which contrast tests this, and which sign of `diff` would support H1?**
+
+```{r sign-rule}
+explain_contrast("TSB_vs_SN_at_anc")
+```
+
+> *Your answer:* …
+
+::: {.callout-tip collapse="true"}
+## Check your formulation (open after you wrote yours)
+H0: mean log2 abundance in anc_SN = anc_TSB. H1 (one-sided): lower in anc_SN.
+With contrast `TSB_vs_SN_at_anc` (= TSB − SN), H1 predicts **diff > 0**.
+Also decide now how large a change you would call *biologically relevant*
+(e.g. |log2FC| > 1 = two-fold?). Deciding afterwards is cheating yourself.
+:::
+
+## 3. Find the three proteins
+
+Gene names are empty in this data set. We search by **locus tag** (JE2 genome CP020619.1).
+
+```{r find}
+tcy <- find_protein(c("B7H15_13375", "B7H15_13370", "B7H15_13365")) |>
+  select(protein_key, locus_tag, product, protein_id, staa8_uniprot, location) |>
+  mutate(short_name = c(B7H15_13375 = "TcyA", B7H15_13370 = "TcyB",
+                        B7H15_13365 = "TcyC")[locus_tag])
+tcy
+```
+
+**Question:** the products are just called "amino acid ABC transporter …". How can
+you convince yourself these really are TcyA/B/C? (Hint: `staa8_uniprot` →
+look up the NCTC8325 ortholog on uniprot.org; check the location on the genome.)
+
+There may be more than one way into the cell for cystine:
+
+```{r find-cystine}
+find_protein("cystine") |> select(locus_tag, product, protein_id, staa8_uniprot)
+```
+
+## 4. Look at the raw per-sample values first
+
+```{r plot-tcy, fig.width=10, fig.height=4}
+abundances <- read_abundances("total")
+plot_protein(tcy$locus_tag, abundances)
+```
+
+**Questions:** Is every replicate detected? Do the three replicates agree? Looking
+only at the anc TSB vs anc SN boxes – what do you expect the fold change to be?
+
+> *Your answer:* …
+
+## 5. What does the prolfquapp DEA say?
+
+```{r dea}
+dea <- read_dea("total")
+tcy_dea <- dea |>
+  filter(locus_tag %in% tcy$locus_tag,
+         contrast %in% c("TSB_vs_SN_at_anc", "TSB_vs_SN_at_stk", "TSB_vs_SN_at_stp",
+                         "TSB_vs_SNpulse_at_anc")) |>
+  left_join(select(tcy, locus_tag, short_name), by = "locus_tag") |>
+  transmute(short_name, contrast, diff = round(diff, 2),
+            fold_change = round(2^diff, 2), conf.low = round(conf.low, 2),
+            conf.high = round(conf.high, 2), FDR = signif(FDR, 2), estimate_type) |>
+  arrange(short_name, contrast)
+tcy_dea
+```
+
+Translate the sign into words for TcyA in the ancestor:
+
+```{r in-words}
+tcyA_anc <- filter(tcy_dea, short_name == "TcyA", contrast == "TSB_vs_SN_at_anc")
+sprintf("TcyA, anc: diff = %.2f -> TcyA is %s in TSB than in SN (factor %.2f)",
+        tcyA_anc$diff, if_else(tcyA_anc$diff > 0, "HIGHER", "LOWER"),
+        2^abs(tcyA_anc$diff))
+```
+
+> *Your answer:* does this support H1 or not?
+
+## 6. Do your own test
+
+Never trust a single tool. Re-do the comparison anc_TSB vs anc_SN yourself.
+
+### 6a. A t-test on 3 vs 3
+
+```{r ttest}
+my_t_test <- function(key, data = abundances) {
+  x <- filter(data, protein_key == key, group %in% c("anc_TSB", "anc_SN"))
+  tsb <- x$normalized_abundance[x$group == "anc_TSB"]
+  sn  <- x$normalized_abundance[x$group == "anc_SN"]
+  welch <- t.test(tsb, sn)                    # unequal variances
+  student <- t.test(tsb, sn, var.equal = TRUE)
+  tibble(protein_key = key,
+         mean_TSB = mean(tsb), mean_SN = mean(sn),
+         diff_TSB_minus_SN = mean(tsb) - mean(sn),
+         p_welch = welch$p.value, p_student = student$p.value)
+}
+own <- purrr::map(tcy$protein_key, my_t_test) |> bind_rows() |>
+  left_join(select(tcy, protein_key, short_name), by = "protein_key") |>
+  relocate(short_name)
+own |> mutate(across(where(is.numeric), \(v) signif(v, 3)))
+```
+
+**Question:** the t-test p-values are not adjusted for testing ~2300 proteins. Why
+is that a problem? Why is that *less* of a problem here, where you test a
+hypothesis you formulated *before* looking at the data?
+
+### 6b. limma – borrowing information across proteins
+
+With only 3 replicates the variance per protein is very uncertain. `limma`
+shrinks each protein's variance towards the typical variance of all proteins
+("moderated t-test"). prolfquapp does something similar.
+
+```{r limma}
+library(limma)
+samples <- read_samples()
+mat <- abundances |>
+  select(protein_key, sample, normalized_abundance) |>
+  pivot_wider(names_from = sample, values_from = normalized_abundance)
+m <- as.matrix(mat[, samples$sample])         # columns in the order of the sample sheet
+rownames(m) <- mat$protein_key
+
+group  <- samples$group
+design <- model.matrix(~ 0 + group)
+colnames(design) <- levels(group)
+fit <- lmFit(m, design)                         # proteins with NAs use their observed values
+contr <- makeContrasts(TSB_vs_SN_at_anc = anc_TSB - anc_SN, levels = design)
+fit2 <- eBayes(contrasts.fit(fit, contr))
+limma_res <- topTable(fit2, number = Inf, sort.by = "none") |>
+  as_tibble(rownames = "protein_key") |>
+  mutate(FDR_limma = p.adjust(P.Value, "BH"))
+
+comparison <- tcy |>
+  select(short_name, protein_key) |>
+  left_join(select(own, protein_key, diff_ttest = diff_TSB_minus_SN, p_welch), by = "protein_key") |>
+  left_join(select(limma_res, protein_key, diff_limma = logFC, p_limma = P.Value, FDR_limma),
+            by = "protein_key") |>
+  left_join(dea |> filter(contrast == "TSB_vs_SN_at_anc") |>
+              select(protein_key, diff_prolfqua = diff, p_prolfqua = p.value, FDR_prolfqua = FDR),
+            by = "protein_key") |>
+  select(-protein_key)
+comparison |> mutate(across(where(is.numeric), \(v) signif(v, 3)))
+```
+
+**Questions:** Do the three methods agree on the *direction*? On the *size*? On
+"significant or not"? Where do they differ, and why?
+
+## 7. Effect size vs significance
+
+```{r effect-size, fig.height=3.5}
+dea |>
+  filter(locus_tag %in% tcy$locus_tag, contrast == "TSB_vs_SN_at_anc") |>
+  left_join(select(tcy, locus_tag, short_name), by = "locus_tag") |>
+  ggplot(aes(diff, short_name)) +
+  geom_vline(xintercept = 0) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", colour = "grey50") +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high)) +
+  annotate("text", x = 0.6, y = 0.6, label = "higher in TSB ->", size = 3) +
+  annotate("text", x = -0.6, y = 0.6, label = "<- higher in SN", size = 3) +
+  labs(x = "TSB_vs_SN_at_anc: log2 fold change with 95 % CI", y = NULL,
+       title = "Ancestor, TSB vs SN")
+```
+
+For comparison: in the evolved *tcyA* frameshift mutant, TcyA dropped by
+log2FC −5.95 (≈ 60-fold). Put your fold changes on the same scale.
+
+**Questions:** A change can be *statistically significant* and still *tiny*.
+Which is the case here? What would you need to call TcyABC "down-regulated"?
+
+## 8. Your conclusion
+
+> *Your answer:* Is H0 rejected? In which direction? Is the effect biologically
+> relevant? How confident are you, and what are the caveats?
+
+## 9. Discussion prompts
+
+Discuss in your group (and write the outcome in your lab notebook):
+
+1. **Plastic vs genetic response.** In *mSystems* the strong TcyA loss was a *genetic*
+   effect (evolved frameshift vs ancestor). Here you look at the *plastic* effect of
+   the medium in a non-evolved strain. Should those two agree? Why might a cell
+   *not* down-regulate a transporter plastically even if losing it is adaptive?
+2. **Operons and polar effects.** *tcyA, tcyB, tcyC* are co-transcribed. Do the three
+   proteins move together here? Why did the frameshift in *tcyA* also reduce TcyB?
+3. **Alternative routes.** Look at the L-cystine symporter (TcyP-like,
+   `B7H15_02105`). What happens to it in SN? Could the cell compensate?
+   `plot_protein("B7H15_02105")`
+4. **Abundance ≠ activity.** A transporter can be present but closed, or
+   inhibited by competition with other substrates. What experiment would measure
+   *uptake* instead of protein amount?
+5. **Nutrient depletion vs toxin defence.** SN = 70 % TSB + 30 % *spent*, cell-free
+   *P. aeruginosa* medium. Spent medium is nutrient-poor – cystine/cysteine may be partly
+   used up. Bacteria often *up*-regulate uptake systems when a nutrient becomes scarce.
+   So a change in a transporter may reflect **nutrient availability** rather than
+   **defence against secreted toxins**. Which experiment would separate the two
+   (hint: TSB diluted with saline only; spent medium with cystine added back)?
+6. **Short pulse.** Would you expect a change in protein amount after 15 min (SNpulse)?
+
+## 10. Secondary question: do the kinase/phosphatase mutants change Tcy levels?
+
+```{r genotype}
+dea |>
+  filter(locus_tag %in% tcy$locus_tag,
+         contrast %in% c("stk_vs_anc_at_TSB", "stp_vs_anc_at_TSB",
+                         "stk_vs_anc_at_SN", "stp_vs_anc_at_SN")) |>
+  left_join(select(tcy, locus_tag, short_name), by = "locus_tag") |>
+  transmute(short_name, contrast, diff = round(diff, 2), FDR = signif(FDR, 2), estimate_type) |>
+  arrange(short_name, contrast)
+```
+
+```{r explain-geno}
+explain_contrast("stp_vs_anc_at_TSB")
+```
+
+**Questions:** Is any Tcy protein different in the mutants? Before you interpret it
+as "Stp1 controls TcyA": check notebook 03 – is the `stp` strain really a clean
+*stp1* mutant?
+
+```{r session}
+sessionInfo()
+```

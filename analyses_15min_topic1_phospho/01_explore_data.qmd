@@ -1,0 +1,186 @@
+---
+title: "01 – Explore the data"
+subtitle: "Bio253 HS2026 · S. aureus JE2 proteome"
+---
+
+**Goal:** get to know the data *before* testing anything. After this notebook you
+should be able to answer: How many proteins? How many samples? Do the replicates
+look alike? Which factor (genotype or medium) changes the proteome most? How much
+is missing?
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Load the data
+
+```{r load}
+samples    <- read_samples()
+abundances <- read_abundances("total")   # long: one row per protein x sample
+dea        <- read_dea("total")          # long: one row per protein x contrast
+
+samples
+```
+
+```{r dims}
+tibble(
+  what  = c("samples", "proteins (no contaminants)", "contrasts", "rows in abundance table"),
+  value = c(n_distinct(abundances$sample), n_distinct(abundances$protein_key),
+            n_distinct(dea$contrast), nrow(abundances))
+)
+```
+
+::: {.callout-tip}
+## Long vs wide
+All tables are *long*: one measurement per row. That is what `dplyr` and `ggplot2`
+like. If you need a matrix (proteins × samples), use `pivot_wider()` – see the PCA below.
+:::
+
+## 2. Distribution of abundances per sample
+
+The values are already log2-transformed and normalised (vsn). Normalisation should
+make the sample distributions look similar.
+
+```{r boxplot, fig.height=4}
+ggplot(abundances, aes(sample, normalized_abundance, fill = genotype)) +
+  geom_boxplot(outlier.size = 0.3, na.rm = TRUE) +
+  facet_grid(~medium, scales = "free_x") +
+  scale_fill_manual(values = GENOTYPE_COLOURS) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 6)) +
+  labs(y = "normalised abundance (log2)", x = NULL)
+```
+
+## 3. Missing values
+
+A protein that is not detected in a sample has `NA` (not 0!). Missing values are
+usually **not random**: low-abundant proteins go missing more often.
+
+```{r missing}
+missing_per_sample <- abundances |>
+  group_by(sample, group) |>
+  summarise(n_detected = sum(!is.na(normalized_abundance)),
+            n_missing  = sum(is.na(normalized_abundance)), .groups = "drop")
+
+missing_per_sample |>
+  group_by(group) |>
+  summarise(mean_detected = round(mean(n_detected)), mean_missing = round(mean(n_missing)))
+```
+
+```{r missing-vs-abundance, fig.height=3.5}
+# Are proteins with missing values the low-abundant ones?
+abundances |>
+  group_by(protein_key) |>
+  summarise(mean_abundance = mean(normalized_abundance, na.rm = TRUE),
+            n_missing = sum(is.na(normalized_abundance))) |>
+  mutate(missing_class = cut(n_missing, c(-1, 0, 3, 12, 27),
+                             labels = c("0", "1-3", "4-12", "13-27"))) |>
+  ggplot(aes(missing_class, mean_abundance)) +
+  geom_boxplot(na.rm = TRUE) +
+  labs(x = "number of samples (of 27) where the protein is missing",
+       y = "mean abundance where observed (log2)")
+```
+
+## 4. Do replicates cluster? (PCA)
+
+PCA needs a complete matrix, so we use only proteins observed in **all** 27 samples.
+
+```{r pca}
+mat <- abundances |>
+  select(protein_key, sample, normalized_abundance) |>
+  pivot_wider(names_from = sample, values_from = normalized_abundance) |>
+  tidyr::drop_na()
+m <- as.matrix(mat[, -1])
+nrow(m)   # proteins used
+
+pca <- prcomp(t(m), center = TRUE, scale. = FALSE)
+var_explained <- round(100 * pca$sdev^2 / sum(pca$sdev^2), 1)
+
+scores <- as_tibble(pca$x[, 1:3], rownames = "sample") |>
+  left_join(samples, by = "sample")
+
+ggplot(scores, aes(PC1, PC2, colour = genotype, shape = medium)) +
+  geom_point(size = 3) +
+  scale_colour_manual(values = GENOTYPE_COLOURS) +
+  labs(x = paste0("PC1 (", var_explained[1], " %)"),
+       y = paste0("PC2 (", var_explained[2], " %)"))
+```
+
+**Question:** Which factor separates the samples along PC1? Which along PC2?
+Where do the SNpulse samples sit relative to TSB and SN – and does that make sense
+biologically for a 15-minute exposure?
+
+## 5. Sample–sample correlation
+
+```{r correlation, fig.height=6}
+cor_mat <- cor(m, method = "pearson")
+order <- samples$sample   # design order: genotype, then medium
+as_tibble(cor_mat, rownames = "sample_a") |>
+  pivot_longer(-sample_a, names_to = "sample_b", values_to = "r") |>
+  mutate(sample_a = factor(sample_a, order), sample_b = factor(sample_b, order)) |>
+  ggplot(aes(sample_a, sample_b, fill = r)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+        axis.text.y = element_text(size = 6)) +
+  labs(x = NULL, y = NULL)
+```
+
+## 6. How many proteins change per contrast?
+
+The DEA (prolfquapp) tested **33 contrasts**. Remember the sign rule:
+
+```{r explain}
+explain_contrast("TSB_vs_SN_at_anc")
+explain_contrast("interaction_stk_vs_anc_at_TSB_vs_SN")
+```
+
+```{r hits}
+hits <- count_hits(dea, fdr_cutoff = 0.1, lfc_cutoff = 1)
+hits |> arrange(desc(n_hits))
+```
+
+```{r hits-plot, fig.height=6}
+hits |>
+  pivot_longer(c(n_up, n_down), names_to = "direction", values_to = "n") |>
+  mutate(n = if_else(direction == "n_down", -n, n),
+         contrast = reorder(contrast, n_hits)) |>
+  ggplot(aes(n, contrast, fill = direction)) +
+  geom_col() +
+  scale_fill_manual(values = c(n_up = "#D55E00", n_down = "#0072B2"),
+                    labels = c(n_up = "diff > 1 (higher in A)", n_down = "diff < -1 (higher in B)")) +
+  labs(x = "number of proteins with FDR < 0.1 and |log2FC| > 1", y = NULL, fill = NULL)
+```
+
+How much of this rests on imputed group means?
+
+```{r imputed}
+dea |>
+  filter(FDR < 0.1, abs(diff) > 1) |>
+  count(contrast, estimate_type) |>
+  pivot_wider(names_from = estimate_type, values_from = n, values_fill = 0) |>
+  arrange(desc(observed))
+```
+
+::: {.callout-warning}
+## `lod_imputed`
+`estimate_type == "lod_imputed"` means at least one group mean was **not measured**
+but estimated from the limit of detection. Such fold changes can be large and
+"significant" just because a protein was not seen in one group. Treat them as
+*present/absent* evidence and always look at the per-sample plot.
+:::
+
+## 7. A first volcano plot
+
+```{r volcano, fig.height=5}
+volcano(dea, "TSB_vs_SN_at_anc", highlight = KEY_PROTEINS$locus_tag)
+```
+
+## Your notes
+
+* What surprised you?
+* Which contrast would you like to look at in more detail – and why?
+* Write it down in `notebook/` (see `notebook/README.md`).
+
+```{r session}
+sessionInfo()
+```
