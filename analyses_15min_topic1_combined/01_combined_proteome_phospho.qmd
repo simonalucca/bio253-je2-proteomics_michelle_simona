@@ -1,0 +1,168 @@
+---
+title: "Topic 1: proteome vs phosphoproteome after 15 min PASN"
+subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · combined analysis"
+---
+
+Working notebook for the combined analysis. Polished parts go to `reports/` at the end.
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Question
+
+Does *S. aureus* JE2 show early phosphorylation changes after 15 min of
+*P. aeruginosa* supernatant (PASN) exposure, before major changes in protein abundance?
+
+## 2. Hypothesis
+
+* **H1:** After 15 min (SNpulse), a larger fraction of reliably measured
+  phosphosites than proteins changes.
+* **H0:** The fraction of changed phosphosites after 15 min is not larger than
+  the fraction of changed proteins.
+
+## 3. Data used and shared definitions
+
+Both layers are analysed with **the same pipeline**:
+
+* **Tables:** course DEA results (prolfquapp, vsn) and per-sample normalised
+  abundances; total proteome (`total`) and phosphosites (`phospho_STYH`)
+* **Samples:** wild type JE2 (`anc`): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3
+* **Contrasts:** `TSB_vs_SNpulse_at_anc`, `TSB_vs_SN_at_anc` (`diff < 0` = higher in PASN)
+* **Reliable:** detected in ≥ 2 of 3 replicates in both compared groups
+* **Changed:** FDR < 0.05 and |log2FC| > 1
+* Contaminants removed
+
+```{r data}
+contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")
+
+# Flags every protein / site as reliable and changed, using the shared definitions.
+# key = column that identifies one feature: protein_key (proteins) or site (phosphosites)
+flag_changes <- function(dataset, key) {
+  n_obs <- read_abundances(dataset) |>
+    filter(genotype == "anc") |>
+    group_by(across(all_of(c(key, "medium")))) |>
+    summarise(n = sum(!is.na(normalized_abundance)), .groups = "drop") |>
+    pivot_wider(names_from = medium, values_from = n, values_fill = 0)
+
+  read_dea(dataset, contrasts = contr) |>
+    left_join(n_obs, by = key) |>
+    mutate(reliable = case_when(
+             contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
+             contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2),
+           reliable = coalesce(reliable, FALSE),
+           changed  = FDR < 0.05 & abs(diff) > 1)
+}
+
+prot <- flag_changes("total",        key = "protein_key")
+phos <- flag_changes("phospho_STYH", key = "site")
+```
+
+## 4. Methods
+
+*Fill in: same pipeline for both layers (see section 3); fraction changed =
+changed / reliably measured; Fisher's exact test for the 15 min comparison;
+overlap of changed phosphosites with protein abundance via `protein_key`.*
+
+## 5. Results
+
+### 5.1 Fraction of changed features
+
+```{r fractions}
+summary_tbl <- bind_rows(
+  prot |> mutate(layer = "Total proteome"),
+  phos |> mutate(layer = "Phosphoproteome (STYH)")
+) |>
+  filter(reliable) |>
+  group_by(layer, contrast) |>
+  summarise(n_reliable = n(),
+            n_changed  = sum(changed),
+            fraction   = n_changed / n_reliable,
+            .groups = "drop") |>
+  mutate(exposure = if_else(contrast == "TSB_vs_SNpulse_at_anc",
+                            "15 min pulse", "long-term (~15 h)"),
+         layer = factor(layer, levels = c("Phosphoproteome (STYH)", "Total proteome")))
+
+summary_tbl
+```
+
+```{r plot-fractions}
+#| fig-cap: "Share of reliably measured proteins / phosphosites that change vs. TSB. Labels: changed / reliably measured."
+ggplot(summary_tbl, aes(exposure, fraction, fill = exposure)) +
+  geom_col(width = 0.55) +
+  geom_text(aes(label = paste0(round(100 * fraction, 1), "%\n(",
+                               n_changed, "/", n_reliable, ")")),
+            vjust = -0.3, size = 3.5) +
+  facet_wrap(~ layer) +
+  scale_y_continuous(labels = scales::percent,
+                     expand = expansion(mult = c(0, 0.25))) +
+  scale_fill_manual(values = c("15 min pulse" = "#4477CC",
+                               "long-term (~15 h)" = "#E07040")) +
+  labs(title = "Share of reliably measured features that change vs. TSB",
+       subtitle = "S. aureus JE2 (anc), n = 3 per group, |log2FC| > 1, FDR < 0.05",
+       x = NULL, y = "changed / reliably measured") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### 5.2 Test: is the 15 min fraction larger for phosphosites?
+
+```{r test}
+early <- summary_tbl |> filter(exposure == "15 min pulse") |> arrange(layer)
+early_counts <- cbind(changed     = early$n_changed,
+                      not_changed = early$n_reliable - early$n_changed)
+rownames(early_counts) <- as.character(early$layer)
+early_counts
+
+# one-sided: phospho fraction (row 1) > protein fraction (row 2)
+fisher.test(early_counts, alternative = "greater")
+```
+
+### 5.3 Changed phosphosites at 15 min: did their protein change too?
+
+```{r overlap}
+prot_early <- prot |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc") |>
+  select(protein_key, diff_protein = diff, FDR_protein = FDR)
+
+phos |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc", reliable, changed) |>
+  select(protein_key, locus_tag, product, residue, position,
+         diff_site = diff, FDR_site = FDR) |>
+  left_join(prot_early, by = "protein_key") |>
+  mutate(protein_changed = FDR_protein < 0.05 & abs(diff_protein) > 1) |>
+  arrange(FDR_site)
+```
+
+### 5.4 Raw values of the early phosphosites
+
+```{r raw-sites}
+early_sites <- phos |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc", reliable, changed) |>
+  pull(site)
+
+read_abundances("phospho_STYH") |>
+  filter(genotype == "anc", site %in% early_sites) |>
+  mutate(label = paste(locus_tag, paste0(residue, position), sep = " ")) |>
+  ggplot(aes(medium, normalized_abundance)) +
+  geom_point(position = position_jitter(width = 0.05, height = 0, seed = 1),
+             colour = "#0072B2", na.rm = TRUE) +
+  facet_wrap(~ label, scales = "free_y") +
+  labs(x = "medium", y = "normalised abundance (log2)") +
+  theme_bw()
+```
+
+## 6. Caveats
+
+*Fill in: few reliably measured phosphosites (power); pipeline choice matters
+for phospho (Roadmap A gives different numbers, see Michelle's notebook); STYH
+vs STY; site localisation; phospho signal vs occupancy; caveats from the
+proteome notebook (medium/growth state at 15 h, run order, pulse handling).*
+
+## 7. Conclusion and next steps
+
+## 8. Sources
+
+```{r session}
+sessionInfo()
+```
