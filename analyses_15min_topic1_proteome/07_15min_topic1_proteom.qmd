@@ -49,7 +49,11 @@ which filters (e.g. contaminants removed, ≥ 2/3 replicates)?*
 * **Filters:**
   * contaminants removed (default of `read_dea()` / `read_abundances()`)
   * "reliably measured": detected (not NA) in ≥ 2 of 3 replicates
-    in both compared groups
+    in both compared groups **and** DEA estimate based on observed values
+    (`estimate_type == "observed"`, no imputation)
+  * Note: the `observed` criterion was added after the first analysis, to use
+    exactly the same rule as the phospho analysis (Michelle). It changed the
+    numbers only slightly (15 min: 37/2105 → 35/2003 changed proteins).
 
 ```{r data}
 contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")
@@ -68,13 +72,16 @@ n_obs <- ab |>
   pivot_wider(names_from = medium, values_from = n, values_fill = 0)
 
 # Add reliability flag and "changed" flag
-# Reliable means detected in at least 2 of 3 replicates in both groups being compared.
+# Reliable means detected in at least 2 of 3 replicates in both groups being compared
+# AND the DEA estimate is based on observed values (estimate_type == "observed", not imputed).
+# Same rule as in the phospho analysis, so proteins and phosphosites are comparable.
 # Changed means FDR < 0.05 and |log2FC| > 1. That FDR is stricter than the course default of 0.1, so mention it in your Methods section.
 dea <- dea |>
   left_join(n_obs, by = "protein_key") |>
   mutate(reliable = case_when(
            contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
            contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2),
+         reliable = reliable & estimate_type == "observed",
          changed = FDR < 0.05 & abs(diff) > 1)
 
 # Quick overview: how many proteins per contrast, how many reliable?
@@ -164,12 +171,12 @@ dea |>
   scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "#D55E00")) +
   labs(x = "log2FC (TSB vs PASN; < 0 = higher in PASN)", y = "-log10(FDR)")
 ```
-After 15 min, only 37 proteins (1.8 %) change by at least 2× with FDR < 0.05.
-After ~15 h, it’s 390 proteins (19.1 %), about 10× more.
+After 15 min, only 35 of 2003 reliably measured proteins (1.7 %) change by at least 2× with FDR < 0.05.
+After ~15 h, it’s 375 of 1979 proteins (18.9 %), about 10× more.
 
 That’s exactly what you predicted: only a few % at 15 min, clearly more at 15 h.
 
-15 min: mostly increases. About three quarters of the early changes go up. That fits your top 6 and the idea of a fast, targeted switch-on, e.g. fermentation enzymes. It also makes sense mechanically: a cell can raise a protein quickly by making more of it, but halving a protein within 15 min requires active degradation, which is slower and rarer. The 10 early decreases are worth a quick look in the raw-values plots, since a 2× drop in 15 min is unusual.
+15 min: mostly increases. About three quarters of the early changes go up. That fits your top 6 and the idea of a fast, targeted switch-on, e.g. fermentation enzymes. It also makes sense mechanically: a cell can raise a protein quickly by making more of it, but halving a protein within 15 min requires active degradation, which is slower and rarer. The 8 early decreases are worth a quick look in the raw-values plots, since a 2× drop in 15 min is unusual.
 ~15 h: mostly decreases. Long-term, more proteins go down than up. A plausible reason is that the SN medium is 30 % spent P. aeruginosa medium and partly nutrient-depleted, so after many hours the cells have reorganised their whole metabolism and turned down many pathways. Over many generations, proteins that are no longer made are also diluted out by growth.
 
 Volcano plot:
@@ -181,7 +188,6 @@ The lines and colours
 Vertical dashed lines at −1 and +1: your 2× effect-size threshold.
 Horizontal dashed line at 1.3: your FDR = 0.05 threshold.
 Orange points: proteins that pass both thresholds, i.e. your “changed” ones, in the upper left and upper right corners. Grey points don’t.
-```
 
 ## 6. Caveats
 
@@ -191,17 +197,17 @@ strain a clean mutant (notebook 03)? Protein abundance vs activity? Batch effect
 
 1. 15 min vs ~15 h is not only a difference in time. SN cells were grown for ~15 h in a different medium (70 % TSB + 30 % PASN, partly nutrient-depleted), while SNpulse cells were grown in TSB and only exposed for 15 min. Part of the larger change at 15 h may therefore reflect growth in a poorer medium and a different growth state, not only longer PASN exposure.
 
-2. Only 3 replicates per group. Small effects or variable proteins may be missed, and FDR values from n = 3 are sensitive to single outlying samples. The top hits looked consistent in the raw values (3/3 replicates, tight spread), but this was not checked for all 37 + 390 proteins.
+2. Only 3 replicates per group. Small effects or variable proteins may be missed, and FDR values from n = 3 are sensitive to single outlying samples. The top hits looked consistent in the raw values (3/3 replicates, tight spread), but this was not checked for all 35 + 375 proteins.
 
 3. Thresholds determine the counts. The fractions depend on the chosen cut-offs (FDR < 0.05, |log2FC| > 1). The volcano plots show many proteins, especially at 15 h, that are significant but change less than 2-fold. With the course default (FDR < 0.1) or a lower fold-change cut-off the absolute numbers would change; the large difference between 15 min and 15 h makes it unlikely that the main conclusion would change.
 
-4. Missing values and imputation. Proteins detected in < 2 of 3 replicates were excluded. This removes fold changes based on imputed values, but it also excludes on/off proteins (e.g. detected in TSB but absent in SN). The number of excluded proteins was higher at 15 h (258) than at 15 min (195), so the fraction of changed proteins at 15 h is, if anything, underestimated.
+4. Missing values and imputation. Proteins detected in < 2 of 3 replicates or with an imputed DEA estimate were excluded. This removes fold changes based on imputed values, but it also excludes on/off proteins (e.g. detected in TSB but absent in SN). The number of excluded proteins was higher at 15 h (321) than at 15 min (297), so the fraction of changed proteins at 15 h is, if anything, underestimated.
 
 ## 7. Conclusion and next steps
 
 *Answer your question in 2–3 sentences. What experiment or analysis would you do next?*
 
-We hypothesised that after 15 min of PASN exposure only a small fraction of the S. aureus JE2 proteome changes, clearly less than after ~15 h (H1), against the null hypothesis that the fraction after 15 min is not smaller (H0). Our data support H1: after 15 min, only 1.8 % of reliably measured proteins (37/2105) changed significantly (FDR < 0.05, |log2FC| > 1), compared with 19.1 % (390/2042) after ~15 h, about ten times more. The early response was nevertheless not random: it consisted mostly of increases (27 up, 10 down), including strong induction of fermentation enzymes (e.g. AdhE ≈ 18×, L-lactate dehydrogenase ≈ 4.6×), consistent with a rapid switch from respiration to fermentation, as expected if PASN components such as HQNO or cyanide inhibit respiration.
+We hypothesised that after 15 min of PASN exposure only a small fraction of the S. aureus JE2 proteome changes, clearly less than after ~15 h (H1), against the null hypothesis that the fraction after 15 min is not smaller (H0). Our data support H1: after 15 min, only 1.7 % of reliably measured proteins (35/2003) changed significantly (FDR < 0.05, |log2FC| > 1), compared with 18.9 % (375/1979) after ~15 h, about ten times more. The early response was nevertheless not random: it consisted mostly of increases (27 up, 8 down), including strong induction of fermentation enzymes (e.g. AdhE ≈ 18×, L-lactate dehydrogenase ≈ 4.6×), consistent with a rapid switch from respiration to fermentation, as expected if PASN components such as HQNO or cyanide inhibit respiration.
 
 ## 8. Sources
 
