@@ -1,0 +1,147 @@
+
+---
+title: "Phosphoproteomics – Prepared DEA comparison"
+subtitle: "BIO253 HS2026 · Topic 1 · S. aureus JE2"
+format: html
+---
+
+## 1. Research question
+
+Does *S. aureus* JE2 show significant phosphorylation changes after 15 minutes of *P. aeruginosa* supernatant exposure, and how does this compare with approximately 15 hours of exposure?
+
+This analysis uses the course-provided differential expression results to allow a more consistent comparison with the total-proteomics analysis.
+
+## 2. Setup and data
+
+```{r}
+#| label: setup
+
+source("../../R/setup.R")
+
+dea_phospho <- read_dea("phospho_STYH")
+
+dplyr::glimpse(dea_phospho)
+```
+
+## 3. Explore the prepared DEA results
+
+We first examine the two estimate types in the course-provided
+phosphoproteomics DEA. The `observed` results and the
+`lod_imputed` results will be evaluated separately.
+
+```{r}
+#| label: estimate-types
+
+dea_phospho |>
+  dplyr::filter(
+    contrast %in% c(
+      "TSB_vs_SNpulse_at_anc",
+      "TSB_vs_SN_at_anc"
+    )
+  ) |>
+  dplyr::count(contrast, estimate_type)
+```
+
+## 4. Significant phosphosites in the prepared DEA
+
+We define a significant change as FDR < 0.05 and an absolute
+log2 fold change greater than 1, matching the thresholds used
+in the total-proteomics analysis.
+
+The observed and imputed estimates are summarised separately.
+
+```{r}
+#| label: significant-sites
+
+phospho_summary <- dea_phospho |>
+  dplyr::filter(
+    contrast %in% c(
+      "TSB_vs_SNpulse_at_anc",
+      "TSB_vs_SN_at_anc"
+    )
+  ) |>
+  dplyr::mutate(
+    changed = !is.na(FDR) &
+              !is.na(diff) &
+              FDR < 0.05 &
+              abs(diff) > 1
+  ) |>
+  dplyr::group_by(contrast, estimate_type) |>
+  dplyr::summarise(
+    sites_tested = dplyr::n(),
+    significant_sites = sum(changed),
+    percent_significant = round(
+      100 * significant_sites / sites_tested, 2
+    ),
+    .groups = "drop"
+  )
+
+phospho_summary
+```
+
+## 5. Replicate reliability of observed phosphosites
+
+To make the analysis more comparable with the total-proteomics
+analysis, we require phosphosites to be detected in at least
+2 of 3 biological replicates in both compared conditions.
+
+```{r}
+#| label: observed-reliability
+
+library(dplyr)
+library(tidyr)
+
+sites_raw <- read_sites("STYH")
+
+# Count observed replicates for each phosphosite and medium
+n_obs_phospho <- sites_raw |>
+  filter(genotype == "anc") |>
+  group_by(site_id, medium) |>
+  summarise(
+    n = sum(!is.na(log2_intensity)),
+    .groups = "drop"
+  ) |>
+  pivot_wider(
+    names_from = medium,
+    values_from = n,
+    values_fill = 0
+  )
+
+# Join replicate counts to the observed DEA results
+dea_observed <- dea_phospho |>
+  filter(
+    estimate_type == "observed",
+    contrast %in% c(
+      "TSB_vs_SNpulse_at_anc",
+      "TSB_vs_SN_at_anc"
+    )
+  ) |>
+  left_join(n_obs_phospho, by = "site_id") |>
+  mutate(
+    reliable = case_when(
+      contrast == "TSB_vs_SNpulse_at_anc" ~
+        TSB >= 2 & SNpulse >= 2,
+      contrast == "TSB_vs_SN_at_anc" ~
+        TSB >= 2 & SN >= 2
+    ),
+    changed = !is.na(FDR) &
+              !is.na(diff) &
+              FDR < 0.05 &
+              abs(diff) > 1
+  )
+
+# Summarise only reliably measured phosphosites
+observed_reliable_summary <- dea_observed |>
+  filter(reliable %in% TRUE) |>
+  group_by(contrast) |>
+  summarise(
+    sites_tested = n(),
+    significant_sites = sum(changed),
+    percent_significant = round(
+      100 * significant_sites / sites_tested, 2
+    ),
+    .groups = "drop"
+  )
+
+observed_reliable_summary
+```
