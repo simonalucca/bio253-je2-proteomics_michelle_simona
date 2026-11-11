@@ -1,0 +1,398 @@
+---
+title: "Topic 1 – Early Phosphorylation Response"
+format: html
+---
+
+## 1. Load phosphoproteomics data
+
+We use the STYH dataset, which includes phosphorylation searches for serine, threonine, tyrosine and histidine.
+
+```{r}
+source("../R/setup.R")
+sites <- read_sites("STYH")
+
+dim(sites)
+names(sites)
+```
+
+## 2. Experimental groups
+
+Check the number of observations per sample.
+
+```{r}
+sites %>%
+  dplyr::count(genotype, medium, sample)
+```
+
+## 3. Missing phosphosite measurements
+
+Calculate measurement coverage for the ancestral JE2 strain.
+
+```{r}
+sites %>%
+  dplyr::filter(genotype == "anc") %>%
+  dplyr::group_by(medium) %>%
+  dplyr::summarise(
+    total = dplyr::n(),
+    measured = sum(!is.na(intensity)),
+    missing = sum(is.na(intensity)),
+    percent_measured = round(100 * measured / total, 1)
+  )
+```
+
+## 4. Reproducibly detected phosphosites
+
+Count phosphosites detected in at least two or all three replicates.
+
+```{r}
+sites %>%
+  dplyr::filter(
+    genotype == "anc",
+    medium %in% c("TSB", "SNpulse")
+  ) %>%
+  dplyr::group_by(search, site_id, medium) %>%
+  dplyr::summarise(
+    n_detected = sum(!is.na(intensity)),
+    .groups = "drop"
+  ) %>%
+  dplyr::group_by(search, medium) %>%
+  dplyr::summarise(
+    sites_detected_2plus = sum(n_detected >= 2),
+    sites_detected_all3 = sum(n_detected == 3),
+    .groups = "drop"
+  )
+```
+
+## 5. Phosphosites reliably detected in both conditions
+
+We identify phosphosites measured in at least 2 of 3 replicates in both TSB and SNpulse.
+
+```{r}
+site_overlap <- sites %>%
+  dplyr::filter(
+    genotype == "anc",
+    medium %in% c("TSB", "SNpulse")
+  ) %>%
+  dplyr::group_by(search, site_id, medium) %>%
+  dplyr::summarise(
+    n_detected = sum(!is.na(intensity)),
+    .groups = "drop"
+  ) %>%
+  tidyr::pivot_wider(
+    names_from = medium,
+    values_from = n_detected,
+    values_fill = 0
+  ) %>%
+  dplyr::filter(TSB >= 2, SNpulse >= 2)
+
+nrow(site_overlap)
+```
+**Interpretation:** Of the 469 phosphosites reproducibly detected in TSB and 262 in SNpulse, 200 were detected in at least 2 of 3 biological replicates in both conditions.
+
+The prepared observed DEA analysis contains 170 unique phosphosites. The difference suggests additional filtering in the DEA pipeline, which still needs to be verified.
+
+
+## 6. Load differential abundance analysis (DEA) results
+
+The prepared phosphoproteomics DEA table contains statistical comparisons between experimental conditions. We initially focus on the ancestral JE2 strain (anc).
+
+```{r}
+dea_phospho <- read_dea("phospho_STYH")
+
+dim(dea_phospho)
+names(dea_phospho)
+```
+
+## 7. Compare early and long-term phosphorylation responses
+
+We compare the 15-minute PASN exposure (SNpulse) with the long-term exposure (~15 h, SN).
+
+We analyse observed measurements separately from limit-of-detection-imputed estimates.
+
+Significance criteria:
+- FDR < 0.05
+- Absolute log2 fold change > 1
+
+```{r}
+phospho_summary <- dea_phospho %>%
+  dplyr::filter(
+    contrast %in% c(
+      "TSB_vs_SNpulse_at_anc",
+      "TSB_vs_SN_at_anc"
+    )
+  ) %>%
+  dplyr::group_by(contrast, estimate_type) %>%
+  dplyr::summarise(
+    n_rows = dplyr::n(),
+    n_tested = sum(!is.na(FDR)),
+    n_significant = sum(
+      FDR < 0.05 & abs(diff) > 1,
+      na.rm = TRUE
+    ),
+    percent_significant = round(
+      100 * n_significant / n_tested, 2
+    ),
+    .groups = "drop"
+  )
+
+phospho_summary
+```
+
+## 8. Check unique phosphosites in the observed analysis
+
+We verify that each row corresponds to a distinct phosphosite.
+
+```{r}
+dea_phospho %>%
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc",
+    estimate_type == "observed"
+  ) %>%
+  dplyr::summarise(
+    rows = dplyr::n(),
+    unique_sites = dplyr::n_distinct(site_id),
+    unique_proteins = dplyr::n_distinct(protein_key)
+  )
+```
+
+## 9. Identify significant phosphosites after 15 minutes
+
+We identify phosphosites with statistically significant changes in the observed analysis.
+
+For the contrast TSB_vs_SNpulse_at_anc:
+- Negative diff: higher phosphosite signal after PASN exposure
+- Positive diff: higher phosphosite signal in TSB
+
+```{r}
+early_phospho_hits <- dea_phospho %>%
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc",
+    estimate_type == "observed",
+    FDR < 0.05,
+    abs(diff) > 1
+  ) %>%
+  dplyr::select(
+    locus_tag,
+    product,
+    residue,
+    position,
+    diff,
+    FDR
+  )
+
+early_phospho_hits
+```
+
+## 10. Preliminary interpretation
+
+The observed phosphoproteomics analysis identified 3 significant phosphosites out of 170 tested sites (1.76%) after 15 minutes of PASN exposure.
+
+The three sites are:
+
+- B7H15_01690, S33: increased phosphosite signal after PASN exposure.
+- B7H15_05655, T21: decreased phosphosite signal after PASN exposure.
+- B7H15_14290 (IsaA), S194: increased phosphosite signal after PASN exposure.
+
+The long-term observed analysis identified 18 significant sites out of 170 tested (10.59%).
+
+These findings provide preliminary evidence of an early phosphorylation response, but the interpretation depends on the statistical model, detection reliability and possible changes in total protein abundance.
+
+The comparison with total proteomics will be performed together with Person B.
+
+## 11. Compare reproducibly detected sites with observed DEA sites
+
+We compare the phosphosites passing our detection criterion (at least 2 of 3 replicates in both conditions) with those included in the observed DEA analysis.
+
+```{r}
+observed_sites <- dea_phospho %>%
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc",
+    estimate_type == "observed"
+  ) %>%
+  dplyr::distinct(site_id)
+
+overlap_check <- site_overlap %>%
+  dplyr::summarise(
+    reproducible_sites = dplyr::n_distinct(site_id),
+    also_in_observed_dea = sum(site_id %in% observed_sites$site_id),
+    not_in_observed_dea = sum(!site_id %in% observed_sites$site_id)
+  )
+
+overlap_check
+```
+## 12. Detection reliability of significant early phosphosites
+
+We check whether the three significant phosphosites from the observed DEA analysis were detected in at least 2 of 3 replicates in both TSB and SNpulse.
+
+```{r}
+early_phospho_hits_check <- dea_phospho %>%
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc",
+    estimate_type == "observed",
+    FDR < 0.05,
+    abs(diff) > 1
+  ) %>%
+  dplyr::mutate(
+    reproducibly_detected = site_id %in% site_overlap$site_id
+  ) %>%
+  dplyr::select(
+    locus_tag,
+    residue,
+    position,
+    diff,
+    FDR,
+    reproducibly_detected
+  )
+
+early_phospho_hits_check
+```
+## 13. Roadmap A – Statistical analysis of reproducible phosphosites
+
+We follow the lecturer's Roadmap A to test phosphorylation changes after 15 minutes and approximately 15 hours of PASN exposure.
+
+Only phosphosites detected in at least 2 of 3 replicates in both compared groups are included.
+
+### 13.1 Normalisation
+
+Phosphosite intensities are median-centred separately for each sample. This corrects for differences in overall phosphoproteomics signal, assuming that most sites remain unchanged.
+
+```{r}
+sites <- sites %>%
+  dplyr::group_by(sample) %>%
+  dplyr::mutate(
+    log2_norm = log2_intensity -
+      median(log2_intensity, na.rm = TRUE)
+  ) %>%
+  dplyr::ungroup()
+```
+
+### 13.2 Statistical testing using limma
+
+We use the lecturer's reproducible-site analysis with the limma package.
+
+```{r}
+library(limma)
+
+compare_reproducible <- function(sites, group_a, group_b, min_per_group = 2) {
+  x <- dplyr::filter(sites, group %in% c(group_a, group_b))
+
+  keep <- x %>%
+    dplyr::group_by(site_id, group) %>%
+    dplyr::summarise(
+      n = sum(!is.na(log2_norm)),
+      .groups = "drop"
+    ) %>%
+    dplyr::group_by(site_id) %>%
+    dplyr::filter(
+      dplyr::n_distinct(group) == 2,
+      all(n >= min_per_group)
+    ) %>%
+    dplyr::pull(site_id) %>%
+    unique()
+
+  wide <- x %>%
+    dplyr::filter(site_id %in% keep) %>%
+    dplyr::select(site_id, sample, log2_norm) %>%
+    tidyr::pivot_wider(
+      names_from = sample,
+      values_from = log2_norm
+    )
+
+  m <- as.matrix(wide[, -1])
+  rownames(m) <- wide$site_id
+
+  grp <- factor(
+    x$group[match(colnames(m), x$sample)],
+    levels = c(group_a, group_b)
+  )
+
+  design <- model.matrix(~ grp)
+  fit <- limma::eBayes(limma::lmFit(m, design))
+
+  limma::topTable(fit, coef = 2, number = Inf) %>%
+    tibble::rownames_to_column("site_id") %>%
+    dplyr::transmute(
+      site_id,
+      contrast = paste0(group_a, "_vs_", group_b),
+      diff = -logFC,
+      p.value = P.Value,
+      FDR = p.adjust(P.Value, "BH")
+    )
+}
+
+res_a <- dplyr::bind_rows(
+  compare_reproducible(sites, "anc_TSB", "anc_SN"),
+  compare_reproducible(sites, "anc_TSB", "anc_SNpulse")
+)
+```
+
+### 13.3 Summary of significant phosphorylation changes
+
+We define significant changes using FDR < 0.1 and absolute log2 fold change > 1.
+
+```{r}
+roadmap_a_summary <- res_a %>%
+  dplyr::group_by(contrast) %>%
+  dplyr::summarise(
+    sites_tested = dplyr::n(),
+    significant_sites = sum(FDR < 0.1 & abs(diff) > 1),
+    percent_significant = round(
+      100 * significant_sites / sites_tested, 2
+    ),
+    .groups = "drop"
+  )
+
+roadmap_a_summary
+```
+
+### 13.4 Significant early phosphosites
+
+Identify phosphosites showing significant changes after 15 minutes.
+
+```{r}
+early_roadmap_a_hits <- res_a %>%
+  dplyr::filter(
+    contrast == "anc_TSB_vs_anc_SNpulse",
+    FDR < 0.1,
+    abs(diff) > 1
+  )
+
+early_roadmap_a_hits
+```
+
+### 13.5 Preliminary interpretation
+
+Roadmap A identifies 2 significantly changed phosphosites among 200 tested sites (1.0%) after 15 minutes of PASN exposure.
+
+After approximately 15 hours, 102 of 311 tested sites (32.8%) show significant changes.
+
+These results indicate that an early phosphorylation response is detectable, but the proportion of significantly changed phosphosites is much higher after long-term exposure.
+
+The two significant early sites are H15 and S33. Both show higher normalised phosphosite signals after PASN exposure.
+
+Because phosphosite intensity can also depend on total protein abundance, these results do not directly establish changes in phosphorylation occupancy.
+
+The final comparison with total proteomics will be performed together with Person B.
+
+
+## 14. Identify proteins and localisation confidence of early phosphosites
+
+We annotate the two significant early phosphosites identified by Roadmap A and examine their phosphorylation-site localisation probabilities.
+
+```{r}
+early_hits_annotated <- early_roadmap_a_hits %>%
+  dplyr::left_join(
+    sites %>%
+      dplyr::distinct(
+        site_id, locus_tag, product, residue,
+        position, best_loc_prob
+      ),
+    by = "site_id"
+  ) %>%
+  dplyr::select(
+    site_id, locus_tag, product, residue,
+    position, best_loc_prob, diff, FDR
+  )
+
+early_hits_annotated
+```
