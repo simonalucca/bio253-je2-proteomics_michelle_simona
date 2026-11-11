@@ -1,0 +1,230 @@
+---
+title: "Proteom change vs TSB control after 15mi pulse and 15h SN"
+subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle)"
+---
+
+Copy this file (e.g. `07_groupX_my_question.qmd`) and fill in every section.
+Keep it short and honest. A clear negative result is a good result.
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Question
+
+*Does the *S. aureus* JE2 proteome (wild type, anc) change only little after
+15 min of *P. aeruginosa* supernatant exposure, compared to the long-term (~15 h) exposure?
+(Protein part of Topic 1; the phospho part is analysed separately.)
+Looking at a change in protein abundance: how much of each protein the cells contain after supernatant exposure, compared with the TSB control. There are two levels to it.*
+
+## 2. Hypothesis
+
+* **H1:**After 15 min (SNpulse) only a small fraction of proteins changes,
+  clearly less than after ~15 h (SN).
+* **H0:**The fraction of changed proteins after 15 min is not smaller
+  than after ~15 h.
+* **Prediction:** which contrast / sites / proteins, which sign of `diff`, which
+  minimal effect size would you call relevant? (Write this *before* looking.)
+  * Contrasts: `TSB_vs_SNpulse_at_anc` vs. `TSB_vs_SN_at_anc`
+    (`diff < 0` = higher in PASN)
+  * "Changed": |log2FC| > 1 and FDR < 0.05
+  * "Reliably measured": ≥ 2 of 3 replicates in both compared groups
+  * Expected: only a few % after 15 min, clearly more after ~15 h
+
+
+```{r contrast-meaning}
+# Check the direction of the contrast you will use, e.g.
+explain_contrast("TSB_vs_SN_at_anc")
+```
+
+## 3. Data used
+
+*Which tables (total proteome / phospho STY / STYH / site tables), which samples,
+which filters (e.g. contaminants removed, ≥ 2/3 replicates)?*
+* **Table:** total proteome, differential expression results (`dea_total`)
+  and per-sample normalised abundances (`abundances_total`, log2, vsn-normalised)
+* **Samples:** wild type JE2 (anc) only: TSB (control), SNpulse (15 min PASN),
+  SN (~15 h PASN); n = 3 per group
+* **Contrasts:** `TSB_vs_SNpulse_at_anc`, `TSB_vs_SN_at_anc`
+* **Filters:**
+  * contaminants removed (default of `read_dea()` / `read_abundances()`)
+  * "reliably measured": detected (not NA) in ≥ 2 of 3 replicates
+    in both compared groups
+
+```{r data}
+contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")
+
+dea <- read_dea("total", contrasts = contr)
+ab  <- read_abundances("total")
+# read_dea("total", contrasts = contr) reads dea_total.tsv.gz, removes contaminants (proteins the mass spectrometer detects that don’t come from your biological sample) and keeps only your two contrasts
+# read_abundances("total") reads the normalised values for every sample.
+
+# Number of detected replicates (of 3) per protein and medium, wild type only
+# Count detections. For the wild type only (anc), you count for each protein and medium how many of the 3 replicates have a value (not NA). The result is one row per protein, with columns TSB, SNpulse and SN, each holding a number from 0 to 3.
+n_obs <- ab |>
+  filter(genotype == "anc") |>
+  group_by(protein_key, medium) |>
+  summarise(n = sum(!is.na(normalized_abundance)), .groups = "drop") |>
+  pivot_wider(names_from = medium, values_from = n, values_fill = 0)
+
+# Add reliability flag and "changed" flag
+# Reliable means detected in at least 2 of 3 replicates in both groups being compared.
+# Changed means FDR < 0.05 and |log2FC| > 1. That FDR is stricter than the course default of 0.1, so mention it in your Methods section.
+dea <- dea |>
+  left_join(n_obs, by = "protein_key") |>
+  mutate(reliable = case_when(
+           contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
+           contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2),
+         changed = FDR < 0.05 & abs(diff) > 1)
+
+# Quick overview: how many proteins per contrast, how many reliable?
+dea |> count(contrast, reliable)
+# Count. count(contrast, reliable) counts how many proteins are reliable or not in each contrast. That’s the table you see.
+```
+
+## 4. Methods
+
+*What did you compute and why? Which R functions / packages? If an AI agent wrote
+code for you: what did you check yourself?
+I wrote my code with the help of claude, i already added comments to my code, what exactly was done*
+
+## 5. Results
+
+Always start with the raw per-sample values:
+
+The raw values are the individual measurements for each sample, before any statistics. They come from your ab table (abundances_total.tsv.gz), column normalized_abundance.
+
+What the plot shows:
+For each of your top proteins you get one small panel:
+- x-axis: the three media, TSB, SNpulse and SN.
+- Points: the 3 replicates per medium, one point per sample.
+- Box: the spread of those 3 values.
+- “3/3”, “2/3” etc. on top: how many replicates actually have a value.
+
+or one protein in one sample, it’s how much of that protein the mass spec measured:
+
+log2 scale: a difference of 1 means 2× more, 2 means 4× more, and so on.
+vsn-normalised: the samples were adjusted so that they’re comparable to each other, for example if slightly more material was loaded in one tube.
+NA: the protein wasn’t detected in that sample. That doesn’t mean zero; it may just have been below the detection limit.
+
+```{r raw-values}
+# Top 6 changed proteins after 15 min (smallest FDR)
+top_pulse <- dea |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc", reliable, changed) |>
+  arrange(FDR) |>
+  slice_head(n = 6) |>
+  pull(protein_key)
+
+ab_anc <- filter(ab, genotype == "anc")
+
+if (length(top_pulse) > 0) plot_protein(top_pulse, ab_anc)
+
+dea |>
+  filter(protein_key %in% top_pulse) |>
+  select(protein_key, contrast, diff, FDR, estimate_type) |>
+  mutate(fold_change = 2^abs(diff),
+         direction   = if_else(diff < 0, "up in PASN", "down in PASN")) |>
+  arrange(protein_key, contrast)
+
+```
+There’s a clear biological pattern
+
+Four of the six proteins belong to fermentation and anaerobic metabolism: making lactate and ethanol, and a DNA-building enzyme that only works without oxygen. This looks like S. aureus switching from respiration to fermentation. That fits what’s known: P. aeruginosa secretes molecules such as HQNO and cyanide that block S. aureus respiration. It’s worth checking whether the papers in your project describe this, especially Niggli et al.
+
+How to read it
+
+Sign: diff = log2(TSB) − log2(PASN). A negative value means more protein after supernatant exposure, and a positive value means less.
+Size: it’s on a log2 scale, so 1 = 2×, 2 = 4×, 3 = 8×. To turn it into a normal fold change, compute 2^|diff|.
+
+```{r results}
+
+# 1. Fraction of changed proteins per contrast (reliable proteins only)
+frac <- dea |>
+  filter(reliable) |>
+  group_by(contrast) |>
+  summarise(n_reliable = n(),
+            n_changed  = sum(changed),
+            fraction   = n_changed / n_reliable)
+frac
+
+# 2. Up vs down (diff < 0 = higher after PASN)
+dea |>
+  filter(reliable, changed) |>
+  mutate(direction = if_else(diff < 0, "up in PASN", "down in PASN")) |>
+  count(contrast, direction)
+
+# 3. Volcano plots
+dea |>
+  filter(reliable) |>
+  ggplot(aes(x = diff, y = -log10(FDR), colour = changed)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  facet_wrap(~ contrast) +
+  scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "#D55E00")) +
+  labs(x = "log2FC (TSB vs PASN; < 0 = higher in PASN)", y = "-log10(FDR)")
+```
+After 15 min, only 37 proteins (1.8 %) change by at least 2× with FDR < 0.05.
+After ~15 h, it’s 390 proteins (19.1 %), about 10× more.
+
+That’s exactly what you predicted: only a few % at 15 min, clearly more at 15 h.
+
+15 min: mostly increases. About three quarters of the early changes go up. That fits your top 6 and the idea of a fast, targeted switch-on, e.g. fermentation enzymes. It also makes sense mechanically: a cell can raise a protein quickly by making more of it, but halving a protein within 15 min requires active degradation, which is slower and rarer. The 10 early decreases are worth a quick look in the raw-values plots, since a 2× drop in 15 min is unusual.
+~15 h: mostly decreases. Long-term, more proteins go down than up. A plausible reason is that the SN medium is 30 % spent P. aeruginosa medium and partly nutrient-depleted, so after many hours the cells have reorganised their whole metabolism and turned down many pathways. Over many generations, proteins that are no longer made are also diluted out by growth.
+
+Volcano plot:
+The axes
+x-axis: log2 fold change (diff). This shows how strongly a protein changes. 0 means no change. Because of the contrast direction, left (negative) = higher after PASN and right (positive) = lower after PASN. Each step of 1 is a doubling: −3 means 8× higher in PASN.
+y-axis: −log10(FDR). This shows how statistically certain the change is. The minus-log flips small FDRs into big numbers, so higher = more certain. 1.3 corresponds to FDR = 0.05, 2 to 0.01, and 10 to 10⁻¹⁰.
+
+The lines and colours
+Vertical dashed lines at −1 and +1: your 2× effect-size threshold.
+Horizontal dashed line at 1.3: your FDR = 0.05 threshold.
+Orange points: proteins that pass both thresholds, i.e. your “changed” ones, in the upper left and upper right corners. Grey points don’t.
+```
+
+## 6. Caveats
+
+*Missing values / imputation? Only 3 replicates? Multiple testing? Is the `stp`
+strain a clean mutant (notebook 03)? Protein abundance vs activity? Batch effects
+(re-injected samples)?*
+
+1. 15 min vs ~15 h is not only a difference in time. SN cells were grown for ~15 h in a different medium (70 % TSB + 30 % PASN, partly nutrient-depleted), while SNpulse cells were grown in TSB and only exposed for 15 min. Part of the larger change at 15 h may therefore reflect growth in a poorer medium and a different growth state, not only longer PASN exposure.
+
+2. Only 3 replicates per group. Small effects or variable proteins may be missed, and FDR values from n = 3 are sensitive to single outlying samples. The top hits looked consistent in the raw values (3/3 replicates, tight spread), but this was not checked for all 37 + 390 proteins.
+
+3. Thresholds determine the counts. The fractions depend on the chosen cut-offs (FDR < 0.05, |log2FC| > 1). The volcano plots show many proteins, especially at 15 h, that are significant but change less than 2-fold. With the course default (FDR < 0.1) or a lower fold-change cut-off the absolute numbers would change; the large difference between 15 min and 15 h makes it unlikely that the main conclusion would change.
+
+4. Missing values and imputation. Proteins detected in < 2 of 3 replicates were excluded. This removes fold changes based on imputed values, but it also excludes on/off proteins (e.g. detected in TSB but absent in SN). The number of excluded proteins was higher at 15 h (258) than at 15 min (195), so the fraction of changed proteins at 15 h is, if anything, underestimated.
+
+## 7. Conclusion and next steps
+
+*Answer your question in 2–3 sentences. What experiment or analysis would you do next?*
+
+We hypothesised that after 15 min of PASN exposure only a small fraction of the S. aureus JE2 proteome changes, clearly less than after ~15 h (H1), against the null hypothesis that the fraction after 15 min is not smaller (H0). Our data support H1: after 15 min, only 1.8 % of reliably measured proteins (37/2105) changed significantly (FDR < 0.05, |log2FC| > 1), compared with 19.1 % (390/2042) after ~15 h, about ten times more. The early response was nevertheless not random: it consisted mostly of increases (27 up, 10 down), including strong induction of fermentation enzymes (e.g. AdhE ≈ 18×, L-lactate dehydrogenase ≈ 4.6×), consistent with a rapid switch from respiration to fermentation, as expected if PASN components such as HQNO or cyanide inhibit respiration.
+
+## 8. Sources
+
+*Papers, databases (UniProt IDs, STRING), and AI tools used – with what for.*
+
+Papers
+
+Niggli et al., mBio (2023), doi:10.1128/mbio.03153-22. Background on P. aeruginosa supernatant inhibiting S. aureus (incl. JE2); HQNO inhibits the S. aureus respiratory chain (used for interpretation in section 7).
+Schwyter et al., mSystems (2025), doi:10.1128/msystems.00262-25. Proteome response of S. aureus JE2 to P. aeruginosa supernatant (context for the ~15 h response).
+
+Databases
+
+UniProt, S. aureus NCTC 8325 (STAA8) entries for the top hits: AdhE Q2G1K9 (B7H15_00850), L-lactate dehydrogenase LDH1 Q2G218 (B7H15_01295), zinc-dependent alcohol dehydrogenase ADH Q2G0G1 (B7H15_03360), transglycosylase SceD Q2FWF8 (B7H15_11645), type II secretion protein Q2FV34 (B7H15_14375), anaerobic ribonucleoside-triphosphate reductase Q2FV02 (B7H15_14555).
+Protein annotation and DEA results from the course data (prolfquapp; JE2 genome CP020619.1).
+
+Software
+
+R, tidyverse, Quarto, and the course repository bio253-je2-proteomics (helper functions read_dea(), read_abundances(), plot_protein()). Exact versions: see sessionInfo() below.
+
+AI tools
+
+Claude (Anthropic): explained the data structure, contrast direction and plot interpretation; drafted R code (fractions, up/down counts, volcano plots, top-hit table) and text drafts for sections 4–7. I ran all code myself, checked the contrast direction with explain_contrast(), compared the results with the raw-value plots, and revised the text.
+
+```{r session}
+sessionInfo()
+```
