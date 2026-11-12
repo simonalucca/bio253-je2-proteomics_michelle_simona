@@ -68,10 +68,13 @@ phospho_summary <- dea_phospho |>
   ) |>
   dplyr::group_by(contrast, estimate_type) |>
   dplyr::summarise(
-    sites_tested = dplyr::n(),
+    total_rows = dplyr::n(),
+    sites_tested = sum(!is.na(FDR) & !is.na(diff)),
     significant_sites = sum(changed),
-    percent_significant = round(
-      100 * significant_sites / sites_tested, 2
+    percent_significant = dplyr::if_else(
+      sites_tested > 0,
+      round(100 * significant_sites / sites_tested, 2),
+      NA_real_
     ),
     .groups = "drop"
   )
@@ -145,3 +148,205 @@ observed_reliable_summary <- dea_observed |>
 
 observed_reliable_summary
 ```
+
+
+## 6. Exploratory phosphosite detection without the 2/3 filter
+
+To investigate potentially relevant phosphorylation events that
+may have been missed by the replicate reliability filter, we
+examine all phosphosites detected in wild-type S. aureus JE2
+under TSB and SNpulse conditions.
+
+This analysis includes phosphosites detected in only one
+biological replicate. Missing intensity values are interpreted
+as non-detections, not as evidence of absent phosphorylation.
+
+```{r}
+#| label: exploratory-detection
+
+site_detection <- sites_raw |>
+  dplyr::filter(
+    genotype == "anc",
+    medium %in% c("TSB", "SNpulse")
+  ) |>
+  dplyr::group_by(site_id, medium) |>
+  dplyr::summarise(
+    n_detected = sum(!is.na(log2_intensity)),
+    .groups = "drop"
+  ) |>
+  tidyr::pivot_wider(
+    names_from = medium,
+    values_from = n_detected,
+    values_fill = 0
+  ) |>
+  dplyr::mutate(
+    TSB = tidyr::replace_na(TSB, 0L),
+    SNpulse = tidyr::replace_na(SNpulse, 0L)
+  )
+
+# Detection patterns across the two conditions
+detection_patterns <- site_detection |>
+  dplyr::count(TSB, SNpulse, name = "n_sites") |>
+  dplyr::arrange(TSB, SNpulse)
+
+knitr::kable(detection_patterns)
+```
+
+### 6.1 Summary of detection patterns
+
+We distinguish sites detected exclusively in one condition,
+sites detected in both conditions, and sites not detected
+in either condition.
+
+```{r}
+#| label: detection-summary
+
+detection_summary <- site_detection |>
+  dplyr::summarise(
+    total_sites = dplyr::n(),
+    detected_any = sum(TSB > 0 | SNpulse > 0),
+    TSB_only = sum(TSB > 0 & SNpulse == 0),
+    SNpulse_only = sum(TSB == 0 & SNpulse > 0),
+    detected_both = sum(TSB > 0 & SNpulse > 0),
+    detected_neither = sum(TSB == 0 & SNpulse == 0),
+    reliable_both = sum(TSB >= 2 & SNpulse >= 2)
+  )
+
+knitr::kable(detection_summary)
+```
+
+## 7. Statistical comparison with and without the 2/3 filter
+
+We compare the course-provided observed DEA results before
+and after applying the additional replicate reliability filter.
+
+Significance is defined as FDR < 0.05 and absolute log2 fold
+change > 1.
+
+Removing the filter does not change any filtering already
+performed in the course-provided DEA pipeline.
+
+```{r}
+#| label: filter-comparison
+
+filter_comparison <- dea_observed |>
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc"
+  ) |>
+  dplyr::mutate(
+    valid_estimate = !is.na(FDR) & !is.na(diff),
+    significant = valid_estimate &
+      FDR < 0.05 & abs(diff) > 1
+  ) |>
+  dplyr::summarise(
+    valid_without_filter = sum(valid_estimate),
+    significant_without_filter = sum(significant),
+    valid_with_filter = sum(
+      valid_estimate & reliable %in% TRUE
+    ),
+    significant_with_filter = sum(
+      significant & reliable %in% TRUE
+    )
+  ) |>
+  dplyr::mutate(
+    additional_valid_sites =
+      valid_without_filter - valid_with_filter,
+    additional_significant_sites =
+      significant_without_filter - significant_with_filter
+  )
+
+knitr::kable(filter_comparison)
+```
+
+## 8. Additional phosphosites for exploratory investigation
+
+We identify phosphosites with valid observed DEA estimates
+that do not pass the 2/3 replicate reliability filter.
+
+These sites are potential candidates for further investigation,
+but should not automatically be considered significantly changed.
+
+```{r}
+#| label: additional-candidates
+
+additional_candidates <- dea_observed |>
+  dplyr::filter(
+    contrast == "TSB_vs_SNpulse_at_anc",
+    reliable %in% FALSE,
+    !is.na(FDR),
+    !is.na(diff)
+  ) |>
+  dplyr::select(
+    site_id,
+    staa8_gene,
+    product,
+    diff,
+    FDR,
+    TSB,
+    SNpulse
+  ) |>
+  dplyr::arrange(FDR, dplyr::desc(abs(diff)))
+
+cat("Additional candidate rows:", nrow(additional_candidates), "\n")
+cat("Expected additional sites:", filter_comparison$additional_valid_sites, "\n")
+
+knitr::kable(
+  additional_candidates,
+  digits = 3,
+  caption = "Additional phosphosites excluded by the 2/3 filter"
+)
+```
+
+### 8.1 Phosphosites detected only after 15 minutes
+
+We additionally identify phosphosites detected in SNpulse
+but not in TSB, including sites with only one detected
+replicate.
+
+These are exploratory detection candidates rather than
+confirmed phosphorylation changes.
+
+```{r}
+#| label: snpulse-only-candidates
+
+snpulse_only_candidates <- site_detection |>
+  dplyr::filter(
+    TSB == 0,
+    SNpulse > 0
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(SNpulse),
+    site_id
+  )
+
+# Summary by number of detected SNpulse replicates
+snpulse_only_candidates |>
+  dplyr::count(SNpulse, name = "n_sites") |>
+  knitr::kable()
+
+# Show candidates detected in at least 2 SNpulse replicates
+snpulse_only_candidates |>
+  dplyr::filter(SNpulse >= 2) |>
+  knitr::kable(
+    caption = "SNpulse-only sites detected in at least 2 replicates"
+  )
+```
+
+
+## 9. Conclusion
+
+Removing the additional 2/3 replicate reliability filter increased the
+number of phosphosites with valid observed DEA estimates in the
+15-minute TSB versus SNpulse comparison from 122 to 170. The number
+of significant phosphosites remained three (FDR < 0.05 and
+absolute log2 fold change > 1).
+
+In the raw detection analysis, 366 phosphosites were detected in
+SNpulse but not in TSB. Of these, 31 were detected in at least two
+SNpulse replicates, including seven detected in all three. These
+are exploratory detection candidates, not confirmed differential
+phosphorylation events. Changes in phosphopeptide intensity may also
+reflect differences in total protein abundance.
+
+The candidates can be compared with Simona's total-proteomics
+results to help prioritize biological follow-up.
