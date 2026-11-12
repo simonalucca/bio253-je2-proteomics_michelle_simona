@@ -38,6 +38,9 @@ Both layers use **the same pipeline and the same rules**:
 
 * **Tables:** course DEA results (prolfquapp, vsn normalisation) and per-sample
   normalised abundances; total proteome (`total`) and phosphosites (`phospho_STYH`)
+  -> DEA means differential expression analysis. It’s the statistical comparison between groups, like   TSB vs SN in the wild type.
+  -> prolfquapp is the R tool from the Functional Genomics Center Zurich that produced these results.   You didn’t run it yourselves; the course provides its output as Excel files.
+  -> vsn (variance stabilising normalisation) is how the intensities were made comparable between     samples before testing. It corrects for small differences in how much material was injected. It also   makes the noise similar for low- and high-abundance proteins
 * **Samples:** wild type JE2 (`anc`): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3 per group
 * **Contrasts:** `TSB_vs_SNpulse_at_anc`, `TSB_vs_SN_at_anc` (`diff < 0` = higher in PASN)
 * **Reliable:** detected in ≥ 2 of 3 replicates in both compared groups
@@ -78,6 +81,7 @@ phos <- flag_changes("phospho_STYH", key = "site")
   normalisation, linear model; missing values imputed at the limit of detection).
   To avoid fold changes based on imputed values, only features detected in
   ≥ 2/3 replicates in both groups **and** with an observed estimate were used.
+-> Imputation means filling in a value. Here it’s filled in at the LOD: the missing group mean is replaced by a low value that represents “about as low as we can still measure”. That value is typically taken from the lowest intensities observed in the dataset.
 * For each layer and contrast we computed the **fraction of changed features**
   (changed / reliably measured).
 * The 15 min fractions of phosphosites and proteins were compared with a
@@ -147,6 +151,12 @@ early_counts
 # one-sided: phospho fraction (row 1) > protein fraction (row 2)
 fisher.test(early_counts, alternative = "greater")
 ```
+Odds ratio = 1.32: the odds of a phosphosite being “changed” are about 1.3 times the odds for a protein. That points in the direction you expected, but only weakly.
+
+p = 0.416: if there were truly no difference, you’d see a difference at least this big about 42 % of the time. That’s far from the usual 0.05 threshold.
+
+95 % CI from 0.34 to ∞: the interval includes 1 (no difference), which confirms the result isn’t significant. Because the test is one-sided, the upper limit is ∞.
+
 
 ### 5.3 Changed phosphosites at 15 min: did their protein change too?
 
@@ -163,6 +173,14 @@ phos |>
   mutate(protein_changed = FDR_protein < 0.05 & abs(diff_protein) > 1) |>
   arrange(FDR_site)
 ```
+
+The question:
+When a phosphosite changes, there are two possible reasons:
+-> Real change in phosphorylation: the same amount of protein, but a different fraction of it is phosphorylated. This is the interesting case, a signalling event.
+-> The protein amount itself changed: more protein means more phosphopeptide, even if the phosphorylated fraction stays the same.
+
+Two of the three sites look like real phosphorylation changes. The third (IsaA) is mostly explained by more protein. Contrast TSB_vs_SNpulse_at_anc is the wild type; a positive diff means higher in TSB, a negative diff means higher after the 15-min PASN pulse.
+
 
 ### 5.4 Raw values of the early phosphosites
 
