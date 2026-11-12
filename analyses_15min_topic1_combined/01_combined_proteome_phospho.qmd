@@ -1,0 +1,381 @@
+---
+title: "Topic 1: proteome vs phosphoproteome after 15 min PASN"
+subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · combined analysis"
+---
+
+Combined analysis of the two separate notebooks:
+
+* **Proteome (Simona):** `../analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd`
+* **Phosphoproteome (Michelle):** `../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`
+  (Roadmap A as sensitivity analysis: `../analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`)
+
+This notebook recomputes both layers with **one shared function**, so that the
+definitions are guaranteed to be identical. Details, raw-value plots and
+layer-specific interpretation are in the separate notebooks.
+Polished parts go to `reports/` at the end.
+
+```{r setup}
+source("../R/setup.R")
+```
+
+## 1. Question
+
+Does *S. aureus* JE2 show early phosphorylation changes after 15 min of
+*P. aeruginosa* supernatant (PASN) exposure, before major changes in protein abundance?
+
+## 2. Hypothesis
+
+* **H1:** After 15 min (SNpulse), a larger fraction of reliably measured
+  phosphosites than proteins changes.
+* **H0:** The fraction of changed phosphosites after 15 min is not larger than
+  the fraction of changed proteins.
+* Supporting expectation (proteome notebook): the proteome changes only little
+  after 15 min, clearly less than after ~15 h.
+
+## 3. Data used and shared definitions
+
+Both layers use **the same pipeline and the same rules**:
+
+* **Tables:** course DEA results (prolfquapp, vsn normalisation) and per-sample
+  normalised abundances; total proteome (`total`) and phosphosites (`phospho_STYH`)
+  -> DEA means differential expression analysis. It’s the statistical comparison between groups, like   TSB vs SN in the wild type.
+  -> prolfquapp is the R tool from the Functional Genomics Center Zurich that produced these results.   You didn’t run it yourselves; the course provides its output as Excel files.
+  -> vsn (variance stabilising normalisation) is how the intensities were made comparable between     samples before testing. It corrects for small differences in how much material was injected. It also   makes the noise similar for low- and high-abundance proteins
+* **Samples:** wild type JE2 (`anc`): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3 per group
+* **Contrasts:** `TSB_vs_SNpulse_at_anc`, `TSB_vs_SN_at_anc` (`diff < 0` = higher in PASN)
+* **Reliable:** detected in ≥ 2 of 3 replicates in both compared groups
+  (counted from `read_abundances()`, i.e. the values the DEA used) **and**
+  DEA estimate based on observed values (`estimate_type == "observed"`)
+* **Changed:** FDR < 0.05 and |log2FC| > 1
+* Contaminants removed
+* One feature = one protein (`protein_key`) or one phosphosite (`site`)
+
+```{r data}
+contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")
+
+# Flags every protein / site as reliable and changed, using the shared definitions.
+# key = column that identifies one feature: protein_key (proteins) or site (phosphosites)
+flag_changes <- function(dataset, key) {
+  n_obs <- read_abundances(dataset) |>
+    filter(genotype == "anc") |>
+    group_by(across(all_of(c(key, "medium")))) |>
+    summarise(n = sum(!is.na(normalized_abundance)), .groups = "drop") |>
+    pivot_wider(names_from = medium, values_from = n, values_fill = 0)
+
+  read_dea(dataset, contrasts = contr) |>
+    left_join(n_obs, by = key) |>
+    mutate(reliable = case_when(
+             contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
+             contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2),
+           reliable = coalesce(reliable, FALSE) & estimate_type == "observed",
+           changed  = FDR < 0.05 & abs(diff) > 1)
+}
+
+prot <- flag_changes("total",        key = "protein_key")
+phos <- flag_changes("phospho_STYH", key = "site")
+```
+
+## 4. Methods
+
+* Both layers were analysed with the course-provided DEA (prolfquapp, vsn
+  normalisation, linear model; missing values imputed at the limit of detection).
+  To avoid fold changes based on imputed values, only features detected in
+  ≥ 2/3 replicates in both groups **and** with an observed estimate were used.
+-> Imputation means filling in a value. Here it’s filled in at the LOD: the missing group mean is replaced by a low value that represents “about as low as we can still measure”. That value is typically taken from the lowest intensities observed in the dataset.
+* For each layer and contrast we computed the **fraction of changed features**
+  (changed / reliably measured).
+* The 15 min fractions of phosphosites and proteins were compared with a
+  **one-sided Fisher's exact test** (H1: phospho fraction > protein fraction).
+* For each changed phosphosite at 15 min we checked whether **its protein**
+  changed too (join via `protein_key`), to separate phosphorylation changes
+  from changes in protein amount.
+* Sensitivity analysis: Michelle's Roadmap A (median normalisation, limma,
+  FDR < 0.10, no imputation) in the phospho notebook.
+* R, tidyverse and the course helper functions. AI use: see section 8.
+
+## 5. Results
+
+### 5.1 Fraction of changed features
+
+```{r fractions}
+summary_tbl <- bind_rows(
+  prot |> mutate(layer = "Total proteome"),
+  phos |> mutate(layer = "Phosphoproteome (STYH)")
+) |>
+  filter(reliable) |>
+  group_by(layer, contrast) |>
+  summarise(n_reliable = n(),
+            n_changed  = sum(changed),
+            n_up       = sum(changed & diff < 0),
+            n_down     = sum(changed & diff > 0),
+            fraction   = n_changed / n_reliable,
+            .groups = "drop") |>
+  mutate(exposure = if_else(contrast == "TSB_vs_SNpulse_at_anc",
+                            "15 min pulse", "long-term (~15 h)"),
+         layer = factor(layer, levels = c("Phosphoproteome (STYH)", "Total proteome")))
+
+summary_tbl
+```
+
+```{r plot-fractions}
+#| fig-cap: "Share of reliably measured proteins / phosphosites that change vs. TSB. Labels: changed / reliably measured."
+ggplot(summary_tbl, aes(exposure, fraction, fill = exposure)) +
+  geom_col(width = 0.55) +
+  geom_text(aes(label = paste0(round(100 * fraction, 1), "%\n(",
+                               n_changed, "/", n_reliable, ")")),
+            vjust = -0.3, size = 3.5) +
+  facet_wrap(~ layer) +
+  scale_y_continuous(labels = scales::percent,
+                     expand = expansion(mult = c(0, 0.25))) +
+  scale_fill_manual(values = c("15 min pulse" = "#4477CC",
+                               "long-term (~15 h)" = "#E07040")) +
+  labs(title = "Share of reliably measured features that change vs. TSB",
+       subtitle = "S. aureus JE2 (anc), n = 3 per group, |log2FC| > 1, FDR < 0.05",
+       x = NULL, y = "changed / reliably measured") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Expected (checked outside R): proteins 35/2003 (1.7 %) at 15 min and 375/1979
+(18.9 %) at ~15 h; phosphosites 3/131 (2.3 %) at 15 min and 17/144 (11.8 %) at ~15 h.
+
+### 5.2 Test: is the 15 min fraction larger for phosphosites?
+
+```{r test}
+early <- summary_tbl |> filter(exposure == "15 min pulse") |> arrange(layer)
+early_counts <- cbind(changed     = early$n_changed,
+                      not_changed = early$n_reliable - early$n_changed)
+rownames(early_counts) <- as.character(early$layer)
+early_counts
+
+# one-sided: phospho fraction (row 1) > protein fraction (row 2)
+fisher.test(early_counts, alternative = "greater")
+```
+Odds ratio = 1.32: the odds of a phosphosite being “changed” are about 1.3 times the odds for a protein. That points in the direction you expected, but only weakly.
+
+p = 0.416: if there were truly no difference, you’d see a difference at least this big about 42 % of the time. That’s far from the usual 0.05 threshold.
+
+95 % CI from 0.34 to ∞: the interval includes 1 (no difference), which confirms the result isn’t significant. Because the test is one-sided, the upper limit is ∞.
+
+
+### 5.3 Changed phosphosites at 15 min: did their protein change too?
+
+```{r overlap}
+prot_early <- prot |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc") |>
+  select(protein_key, diff_protein = diff, FDR_protein = FDR)
+
+phos |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc", reliable, changed) |>
+  select(protein_key, locus_tag, product, residue, position,
+         diff_site = diff, FDR_site = FDR) |>
+  left_join(prot_early, by = "protein_key") |>
+  mutate(protein_changed = FDR_protein < 0.05 & abs(diff_protein) > 1) |>
+  arrange(FDR_site)
+```
+
+The question:
+When a phosphosite changes, there are two possible reasons:
+-> Real change in phosphorylation: the same amount of protein, but a different fraction of it is phosphorylated. This is the interesting case, a signalling event.
+-> The protein amount itself changed: more protein means more phosphopeptide, even if the phosphorylated fraction stays the same.
+
+Two of the three sites look like real phosphorylation changes. The third (IsaA) is mostly explained by more protein. Contrast TSB_vs_SNpulse_at_anc is the wild type; a positive diff means higher in TSB, a negative diff means higher after the 15-min PASN pulse.
+
+
+### 5.4 Raw values of the early phosphosites
+
+```{r raw-sites}
+early_sites <- phos |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc", reliable, changed) |>
+  pull(site)
+
+read_abundances("phospho_STYH") |>
+  filter(genotype == "anc", site %in% early_sites) |>
+  mutate(label = paste(locus_tag, paste0(residue, position))) |>
+  ggplot(aes(medium, normalized_abundance)) +
+  geom_point(position = position_jitter(width = 0.05, height = 0, seed = 1),
+             colour = "#0072B2", na.rm = TRUE) +
+  facet_wrap(~ label, scales = "free_y") +
+  labs(x = "medium", y = "normalised abundance (log2)") +
+  theme_bw()
+```
+
+### 5.5 Summary of the results
+
+* After 15 min, both layers changed very little: **1.7 %** of proteins
+  (35/2003) and **2.3 %** of phosphosites (3/131).
+* The phosphosite fraction is slightly higher, but this is based on only
+  3 sites and is not significant (one-sided Fisher's exact test, p ≈ 0.42).
+* After ~15 h, both layers changed much more: 18.9 % of proteins (375/1979) and
+  11.8 % of phosphosites (17/144).
+* Of the 3 early phosphosites, 2 changed **without** a change in their protein
+  (5'-nucleotidase S33, up in PASN; hypothetical protein B7H15_05655 T21, down);
+  for IsaA S194 the increase is largely explained by more IsaA protein.
+
+## 6. Caveats
+
+1. **Few reliable phosphosites.** Only ~130–145 phosphosites pass the filter,
+   compared with ~2000 proteins. The phospho analysis therefore has much less
+   power, and single sites change the percentage a lot (1 site = 0.8 %).
+2. **Pipeline choice matters for phospho.** With Roadmap A (Michelle) the
+   numbers differ (15 min: 2/200 = 1.0 %; ~15 h: 102/311 = 32.8 %), and without
+   the `observed` filter the course DEA gives 5/208 at 15 min. The 15 min
+   conclusion is the same in all variants; the ~15 h phospho fraction is not robust.
+3. **Imputed estimates.** Many phospho estimates in the course DEA are imputed,
+   even for sites detected in ≥ 2/3 replicates. Excluding them is conservative,
+   but it also removed interesting candidates (e.g. Stk1/PknB T161/S162, see
+   phospho notebook) and HPr H15 only appears in Roadmap A.
+4. **Phosphosite signal vs occupancy.** A higher phosphosite signal can mean
+   more phosphorylation or more protein; we checked the protein level only for
+   the changed sites (5.3).
+5. **STYH search and site localisation:** histidine sites and closely spaced
+   sites on the same peptide are uncertain.
+6. **From the proteome notebook:** 15 min vs ~15 h also differs in medium and
+   growth state; n = 3; thresholds determine the counts; groups measured as blocks
+   (run order); pulse samples possibly prepared separately.
+
+## 7. Conclusion and next steps
+
+*Draft:* We hypothesised that after 15 min of PASN exposure a larger fraction of
+reliably measured phosphosites than proteins changes (H1). Our data do **not**
+support H1: after 15 min, 2.3 % of phosphosites (3/131) and 1.7 % of proteins
+(35/2003) changed, a difference that is not significant (p ≈ 0.42). Both layers
+responded little after 15 min and much more after ~15 h. A few early
+phosphorylation changes occurred without a change in protein amount
+(e.g. 5'-nucleotidase S33), but given the low phospho coverage we cannot
+conclude that the phospho layer reacts first.
+
+*Next steps:* deeper phospho coverage (more replicates, more enrichment input);
+validate early candidates (5'-nucleotidase S33, Stk1 T161/S162, HPr H15) in the
+`stk`/`stp` mutants; time course with intermediate time points.
+
+## 8. Sources
+
+*Combine the sources sections of both notebooks here (papers, UniProt IDs,
+course data, AI use).*
+
+## 9. Additional analysis: relaxing the 2/3 replicate filter (Michelle)
+
+Based on Michelle's notebook
+`../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd` (sections 6–9).
+Question: **do we miss interesting phosphosites because of the ≥ 2/3 replicate
+rule?** This part is **exploratory**: it does not change the main numbers or the
+Fisher test above.
+
+### 9.1 Does the main result depend on the 2/3 filter?
+
+Same course DEA, observed estimates only, 15 min contrast, with and without the
+replicate filter.
+
+```{r filter-comparison}
+phos |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc",
+         estimate_type == "observed", !is.na(FDR), !is.na(diff)) |>
+  summarise(valid_without_filter       = n(),
+            significant_without_filter = sum(changed),
+            valid_with_filter          = sum(reliable),
+            significant_with_filter    = sum(reliable & changed))
+```
+
+Without the filter, more sites can be tested (170 instead of 131), but the number
+of significant sites stays at **3**. The main result is robust to the filter.
+(Michelle's notebook reports 122 instead of 131 sites with the filter, because
+she counted replicates in the FragPipe site table, `read_sites()`; here we count
+them in `read_abundances()`, like for the proteins.)
+
+### 9.2 Detection patterns: presence / absence without any filter
+
+For every phosphosite (wild type): in how many of the 3 TSB replicates and of
+the 3 SNpulse replicates was the **phosphorylated peptide** detected? This
+includes sites seen in only 1 of 3 replicates. Not detected ≠ not
+phosphorylated: the peptide may just be below the detection limit.
+
+```{r detection-patterns}
+sites_raw <- read_sites("STYH")
+
+site_detection <- sites_raw |>
+  filter(genotype == "anc", medium %in% c("TSB", "SNpulse")) |>
+  group_by(site_id, protein_key, locus_tag, product, residue, position, medium) |>
+  summarise(n_detected = sum(!is.na(log2_intensity)), .groups = "drop") |>
+  pivot_wider(names_from = medium, values_from = n_detected, values_fill = 0)
+
+# all combinations (0-3 in TSB x 0-3 in SNpulse)
+site_detection |> count(TSB, SNpulse, name = "n_sites")
+
+# both directions: lost after the pulse vs gained after the pulse
+site_detection |>
+  summarise(detected_in_TSB     = sum(TSB > 0),
+            detected_in_SNpulse = sum(SNpulse > 0),
+            TSB_only            = sum(TSB > 0 & SNpulse == 0),
+            SNpulse_only        = sum(TSB == 0 & SNpulse > 0),
+            TSB_only_3of3       = sum(TSB == 3 & SNpulse == 0),
+            SNpulse_only_3of3   = sum(TSB == 0 & SNpulse == 3),
+            reliable_both       = sum(TSB >= 2 & SNpulse >= 2))
+```
+
+Most "only in one condition" sites were seen in **1 of 3** replicates only
+(335 of 366 SNpulse-only sites, 625 of 814 TSB-only sites). Single detections
+near the detection limit are weak evidence. There are also many more TSB-only
+than SNpulse-only sites, which could be dephosphorylation, **or** simply a
+deeper measurement of the TSB samples (next section).
+
+### 9.3 Detection depth per sample
+
+```{r detection-depth}
+sites_raw |>
+  filter(genotype == "anc") |>
+  group_by(sample, medium) |>
+  summarise(n_sites = sum(!is.na(log2_intensity)), .groups = "drop") |>
+  ggplot(aes(sample, n_sites, fill = medium)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "number of detected phosphosites",
+       title = "Detection depth per sample (wild type, STYH)")
+```
+
+*Interpretation:* if one sample detects many more sites than its replicates
+(e.g. `JE2anc_TSB_1`), many "TSB-only, 1/3" sites come from that single deep
+sample and are not biological changes.
+
+### 9.4 Strongest presence/absence candidates (3/3 vs 0/3)
+
+Only sites detected in **all 3** replicates of one condition and **none** of the
+other. For each, we check whether its **protein** changed in the total proteome
+(if yes, the site may simply follow the protein amount, like IsaA in 5.3).
+
+```{r on-off-sites}
+prot_pulse <- prot |>
+  filter(contrast == "TSB_vs_SNpulse_at_anc") |>
+  select(protein_key, diff_protein = diff,
+         protein_reliable = reliable, protein_changed = changed)
+
+on_off_sites <- site_detection |>
+  filter((TSB == 3 & SNpulse == 0) | (TSB == 0 & SNpulse == 3)) |>
+  mutate(pattern = if_else(TSB == 3, "only in TSB (lost after pulse)",
+                                     "only after pulse (gained)")) |>
+  left_join(prot_pulse, by = "protein_key") |>
+  arrange(pattern, locus_tag, position)
+
+on_off_sites |> count(pattern)
+on_off_sites |>
+  select(pattern, locus_tag, product, residue, position,
+         diff_protein, protein_reliable, protein_changed)
+```
+
+*These are candidates, not confirmed changes. Before using one in the report:
+plot its raw values, check the depth of the samples (9.3), and check whether
+the protein itself changed.*
+
+### 9.5 Summary of the additional analysis
+
+* Relaxing the 2/3 filter does not change the main result: still **3**
+  significant phosphosites after 15 min.
+* Without any filter, many sites are seen in only one condition, but mostly in
+  just 1 of 3 replicates; part of this pattern is likely due to different
+  detection depth between samples.
+* The 3/3 vs 0/3 sites (7 gained, 42 lost after the pulse) are the most
+  promising presence/absence candidates for follow-up.
+
+```{r session}
+sessionInfo()
+```
