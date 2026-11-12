@@ -2225,6 +2225,14 @@ vertical-align: -.125em;
   <li><a href="#caveats" id="toc-caveats" class="nav-link" data-scroll-target="#caveats">6. Caveats</a></li>
   <li><a href="#conclusion-and-next-steps" id="toc-conclusion-and-next-steps" class="nav-link" data-scroll-target="#conclusion-and-next-steps">7. Conclusion and next steps</a></li>
   <li><a href="#sources" id="toc-sources" class="nav-link" data-scroll-target="#sources">8. Sources</a></li>
+  <li><a href="#additional-analysis-relaxing-the-23-replicate-filter-michelle" id="toc-additional-analysis-relaxing-the-23-replicate-filter-michelle" class="nav-link" data-scroll-target="#additional-analysis-relaxing-the-23-replicate-filter-michelle">9. Additional analysis: relaxing the 2/3 replicate filter (Michelle)</a>
+  <ul class="collapse">
+  <li><a href="#does-the-main-result-depend-on-the-23-filter" id="toc-does-the-main-result-depend-on-the-23-filter" class="nav-link" data-scroll-target="#does-the-main-result-depend-on-the-23-filter">9.1 Does the main result depend on the 2/3 filter?</a></li>
+  <li><a href="#detection-patterns-presence-absence-without-any-filter" id="toc-detection-patterns-presence-absence-without-any-filter" class="nav-link" data-scroll-target="#detection-patterns-presence-absence-without-any-filter">9.2 Detection patterns: presence / absence without any filter</a></li>
+  <li><a href="#detection-depth-per-sample" id="toc-detection-depth-per-sample" class="nav-link" data-scroll-target="#detection-depth-per-sample">9.3 Detection depth per sample</a></li>
+  <li><a href="#strongest-presenceabsence-candidates-33-vs-03" id="toc-strongest-presenceabsence-candidates-33-vs-03" class="nav-link" data-scroll-target="#strongest-presenceabsence-candidates-33-vs-03">9.4 Strongest presence/absence candidates (3/3 vs 0/3)</a></li>
+  <li><a href="#summary-of-the-additional-analysis" id="toc-summary-of-the-additional-analysis" class="nav-link" data-scroll-target="#summary-of-the-additional-analysis">9.5 Summary of the additional analysis</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -2768,7 +2776,7 @@ vertical-align: middle;
 <h2 class="anchored" data-anchor-id="data-used-and-shared-definitions">3. Data used and shared definitions</h2>
 <p>Both layers use <strong>the same pipeline and the same rules</strong>:</p>
 <ul>
-<li><strong>Tables:</strong> course DEA results (prolfquapp, vsn normalisation) and per-sample normalised abundances; total proteome (<code>total</code>) and phosphosites (<code>phospho_STYH</code>)</li>
+<li><strong>Tables:</strong> course DEA results (prolfquapp, vsn normalisation) and per-sample normalised abundances; total proteome (<code>total</code>) and phosphosites (<code>phospho_STYH</code>) -&gt; DEA means differential expression analysis. It’s the statistical comparison between groups, like TSB vs SN in the wild type. -&gt; prolfquapp is the R tool from the Functional Genomics Center Zurich that produced these results. You didn’t run it yourselves; the course provides its output as Excel files. -&gt; vsn (variance stabilising normalisation) is how the intensities were made comparable between samples before testing. It corrects for small differences in how much material was injected. It also makes the noise similar for low- and high-abundance proteins</li>
 <li><strong>Samples:</strong> wild type JE2 (<code>anc</code>): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3 per group</li>
 <li><strong>Contrasts:</strong> <code>TSB_vs_SNpulse_at_anc</code>, <code>TSB_vs_SN_at_anc</code> (<code>diff &lt; 0</code> = higher in PASN)</li>
 <li><strong>Reliable:</strong> detected in ≥ 2 of 3 replicates in both compared groups (counted from <code>read_abundances()</code>, i.e. the values the DEA used) <strong>and</strong> DEA estimate based on observed values (<code>estimate_type == &quot;observed&quot;</code>)</li>
@@ -2807,7 +2815,7 @@ vertical-align: middle;
 <section id="methods" class="level2">
 <h2 class="anchored" data-anchor-id="methods">4. Methods</h2>
 <ul>
-<li>Both layers were analysed with the course-provided DEA (prolfquapp, vsn normalisation, linear model; missing values imputed at the limit of detection). To avoid fold changes based on imputed values, only features detected in ≥ 2/3 replicates in both groups <strong>and</strong> with an observed estimate were used.</li>
+<li>Both layers were analysed with the course-provided DEA (prolfquapp, vsn normalisation, linear model; missing values imputed at the limit of detection). To avoid fold changes based on imputed values, only features detected in ≥ 2/3 replicates in both groups <strong>and</strong> with an observed estimate were used. -&gt; Imputation means filling in a value. Here it’s filled in at the LOD: the missing group mean is replaced by a low value that represents “about as low as we can still measure”. That value is typically taken from the lowest intensities observed in the dataset.</li>
 <li>For each layer and contrast we computed the <strong>fraction of changed features</strong> (changed / reliably measured).</li>
 <li>The 15 min fractions of phosphosites and proteins were compared with a <strong>one-sided Fisher’s exact test</strong> (H1: phospho fraction &gt; protein fraction).</li>
 <li>For each changed phosphosite at 15 min we checked whether <strong>its protein</strong> changed too (join via <code>protein_key</code>), to separate phosphorylation changes from changes in protein amount.</li>
@@ -2976,6 +2984,9 @@ odds ratio
   1.317664 </code></pre>
 </div>
 </div>
+<p>Odds ratio = 1.32: the odds of a phosphosite being “changed” are about 1.3 times the odds for a protein. That points in the direction you expected, but only weakly.</p>
+<p>p = 0.416: if there were truly no difference, you’d see a difference at least this big about 42 % of the time. That’s far from the usual 0.05 threshold.</p>
+<p>95 % CI from 0.34 to ∞: the interval includes 1 (no difference), which confirms the result isn’t significant. Because the test is one-sided, the upper limit is ∞.</p>
 </section>
 <section id="changed-phosphosites-at-15-min-did-their-protein-change-too" class="level3">
 <h3 class="anchored" data-anchor-id="changed-phosphosites-at-15-min-did-their-protein-change-too">5.3 Changed phosphosites at 15 min: did their protein change too?</h3>
@@ -3065,6 +3076,8 @@ odds ratio
 </div>
 </div>
 </div>
+<p>The question: When a phosphosite changes, there are two possible reasons: -&gt; Real change in phosphorylation: the same amount of protein, but a different fraction of it is phosphorylated. This is the interesting case, a signalling event. -&gt; The protein amount itself changed: more protein means more phosphopeptide, even if the phosphorylated fraction stays the same.</p>
+<p>Two of the three sites look like real phosphorylation changes. The third (IsaA) is mostly explained by more protein. Contrast TSB_vs_SNpulse_at_anc is the wild type; a positive diff means higher in TSB, a negative diff means higher after the 15-min PASN pulse.</p>
 </section>
 <section id="raw-values-of-the-early-phosphosites" class="level3">
 <h3 class="anchored" data-anchor-id="raw-values-of-the-early-phosphosites">5.4 Raw values of the early phosphosites</h3>
@@ -3123,10 +3136,826 @@ odds ratio
 <section id="sources" class="level2">
 <h2 class="anchored" data-anchor-id="sources">8. Sources</h2>
 <p><em>Combine the sources sections of both notebooks here (papers, UniProt IDs, course data, AI use).</em></p>
+</section>
+<section id="additional-analysis-relaxing-the-23-replicate-filter-michelle" class="level2">
+<h2 class="anchored" data-anchor-id="additional-analysis-relaxing-the-23-replicate-filter-michelle">9. Additional analysis: relaxing the 2/3 replicate filter (Michelle)</h2>
+<p>Based on Michelle’s notebook <code>../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd</code> (sections 6–9). Question: <strong>do we miss interesting phosphosites because of the ≥ 2/3 replicate rule?</strong> This part is <strong>exploratory</strong>: it does not change the main numbers or the Fisher test above.</p>
+<section id="does-the-main-result-depend-on-the-23-filter" class="level3">
+<h3 class="anchored" data-anchor-id="does-the-main-result-depend-on-the-23-filter">9.1 Does the main result depend on the 2/3 filter?</h3>
+<p>Same course DEA, observed estimates only, 15 min contrast, with and without the replicate filter.</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>phos <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>         estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>, <span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff)) <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">valid_without_filter       =</span> <span class="fu">n</span>(),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">significant_without_filter =</span> <span class="fu">sum</span>(changed),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">valid_with_filter          =</span> <span class="fu">sum</span>(reliable),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">significant_with_filter    =</span> <span class="fu">sum</span>(reliable <span class="sc">&amp;</span> changed))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 30%">
+<col style="width: 20%">
+<col style="width: 26%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">valid_without_filter</th>
+<th style="text-align: right;">significant_without_filter</th>
+<th style="text-align: right;">valid_with_filter</th>
+<th style="text-align: right;">significant_with_filter</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">170</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">131</td>
+<td style="text-align: right;">3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Without the filter, more sites can be tested (170 instead of 131), but the number of significant sites stays at <strong>3</strong>. The main result is robust to the filter. (Michelle’s notebook reports 122 instead of 131 sites with the filter, because she counted replicates in the FragPipe site table, <code>read_sites()</code>; here we count them in <code>read_abundances()</code>, like for the proteins.)</p>
+</section>
+<section id="detection-patterns-presence-absence-without-any-filter" class="level3">
+<h3 class="anchored" data-anchor-id="detection-patterns-presence-absence-without-any-filter">9.2 Detection patterns: presence / absence without any filter</h3>
+<p>For every phosphosite (wild type): in how many of the 3 TSB replicates and of the 3 SNpulse replicates was the <strong>phosphorylated peptide</strong> detected? This includes sites seen in only 1 of 3 replicates. Not detected ≠ not phosphorylated: the peptide may just be below the detection limit.</p>
+<div class="cell">
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="ot">&lt;-</span> <span class="fu">read_sites</span>(<span class="st">&quot;STYH&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>site_detection <span class="ot">&lt;-</span> sites_raw <span class="sc">|&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_id, protein_key, locus_tag, product, residue, position, medium) <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_detected =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n_detected, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># all combinations (0-3 in TSB x 0-3 in SNpulse)</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>site_detection <span class="sc">|&gt;</span> <span class="fu">count</span>(TSB, SNpulse, <span class="at">name =</span> <span class="st">&quot;n_sites&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">TSB</th>
+<th style="text-align: right;">SNpulse</th>
+<th style="text-align: right;">n_sites</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2652</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">335</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">24</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">625</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">102</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">147</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">51</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">42</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">42</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">29</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">31</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">106</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># both directions: lost after the pulse vs gained after the pulse</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>site_detection <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">detected_in_TSB     =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">detected_in_SNpulse =</span> <span class="fu">sum</span>(SNpulse <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">TSB_only            =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">SNpulse_only        =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">TSB_only_3of3       =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">3</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">SNpulse_only_3of3   =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">3</span>),</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">reliable_both       =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 19%">
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">detected_in_TSB</th>
+<th style="text-align: right;">detected_in_SNpulse</th>
+<th style="text-align: right;">TSB_only</th>
+<th style="text-align: right;">SNpulse_only</th>
+<th style="text-align: right;">TSB_only_3of3</th>
+<th style="text-align: right;">SNpulse_only_3of3</th>
+<th style="text-align: right;">reliable_both</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1227</td>
+<td style="text-align: right;">779</td>
+<td style="text-align: right;">814</td>
+<td style="text-align: right;">366</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">200</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Most “only in one condition” sites were seen in <strong>1 of 3</strong> replicates only (335 of 366 SNpulse-only sites, 625 of 814 TSB-only sites). Single detections near the detection limit are weak evidence. There are also many more TSB-only than SNpulse-only sites, which could be dephosphorylation, <strong>or</strong> simply a deeper measurement of the TSB samples (next section).</p>
+</section>
+<section id="detection-depth-per-sample" class="level3">
+<h3 class="anchored" data-anchor-id="detection-depth-per-sample">9.3 Detection depth per sample</h3>
+<div class="cell">
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(sample, medium) <span class="sc">|&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_sites =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(sample, n_sites, <span class="at">fill =</span> medium)) <span class="sc">+</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;number of detected phosphosites&quot;</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Detection depth per sample (wild type, STYH)&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img role="img" src="data:image/png;base64,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" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>Interpretation:</em> if one sample detects many more sites than its replicates (e.g. <code>JE2anc_TSB_1</code>), many “TSB-only, 1/3” sites come from that single deep sample and are not biological changes.</p>
+</section>
+<section id="strongest-presenceabsence-candidates-33-vs-03" class="level3">
+<h3 class="anchored" data-anchor-id="strongest-presenceabsence-candidates-33-vs-03">9.4 Strongest presence/absence candidates (3/3 vs 0/3)</h3>
+<p>Only sites detected in <strong>all 3</strong> replicates of one condition and <strong>none</strong> of the other. For each, we check whether its <strong>protein</strong> changed in the total proteome (if yes, the site may simply follow the protein amount, like IsaA in 5.3).</p>
+<div class="cell">
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>prot_pulse <span class="ot">&lt;-</span> prot <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, <span class="at">diff_protein =</span> diff,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">protein_reliable =</span> reliable, <span class="at">protein_changed =</span> changed)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="ot">&lt;-</span> site_detection <span class="sc">|&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>((TSB <span class="sc">==</span> <span class="dv">3</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|</span> (TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">3</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pattern =</span> <span class="fu">if_else</span>(TSB <span class="sc">==</span> <span class="dv">3</span>, <span class="st">&quot;only in TSB (lost after pulse)&quot;</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">&quot;only after pulse (gained)&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(prot_pulse, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(pattern, locus_tag, position)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="sc">|&gt;</span> <span class="fu">count</span>(pattern)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">pattern</th>
+<th style="text-align: right;">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: right;">42</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(pattern, locus_tag, product, residue, position,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>         diff_protein, protein_reliable, protein_changed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 6%">
+<col style="width: 45%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 6%">
+<col style="width: 8%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">pattern</th>
+<th style="text-align: left;">locus_tag</th>
+<th style="text-align: left;">product</th>
+<th style="text-align: left;">residue</th>
+<th style="text-align: right;">position</th>
+<th style="text-align: right;">diff_protein</th>
+<th style="text-align: left;">protein_reliable</th>
+<th style="text-align: left;">protein_changed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_09250</td>
+<td style="text-align: left;">pyruvate kinase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">538</td>
+<td style="text-align: right;">-0.0321716</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_12300</td>
+<td style="text-align: left;">ATPase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">322</td>
+<td style="text-align: right;">-0.0034462</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_12300</td>
+<td style="text-align: left;">ATPase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">323</td>
+<td style="text-align: right;">-0.0034462</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_14290</td>
+<td style="text-align: left;">transglycosylase IsaA</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">184</td>
+<td style="text-align: right;">-1.8732443</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_14800</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">H</td>
+<td style="text-align: right;">176</td>
+<td style="text-align: right;">0.2620638</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_14800</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">182</td>
+<td style="text-align: right;">0.2620638</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only after pulse (gained)</td>
+<td style="text-align: left;">B7H15_14800</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">197</td>
+<td style="text-align: right;">0.2620638</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_00020</td>
+<td style="text-align: left;">DNA replication and repair protein RecF</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">176</td>
+<td style="text-align: right;">0.0221354</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_01055</td>
+<td style="text-align: left;">PTS glucose EIICBA component</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">555</td>
+<td style="text-align: right;">-0.0010482</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_01205</td>
+<td style="text-align: left;">formate acetyltransferase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">742</td>
+<td style="text-align: right;">-0.7958970</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_01355</td>
+<td style="text-align: left;">2-C-methyl-D-erythritol 4-phosphate cytidylyltransferase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">156</td>
+<td style="text-align: right;">-0.2090979</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02130</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0435203</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02145</td>
+<td style="text-align: left;">IMP dehydrogenase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">121</td>
+<td style="text-align: right;">0.0605645</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02665</td>
+<td style="text-align: left;">50S ribosomal protein L25/general stress protein Ctc</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">-0.1706089</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02990</td>
+<td style="text-align: left;">elongation factor G</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">0.0159457</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02990</td>
+<td style="text-align: left;">elongation factor G</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">238</td>
+<td style="text-align: right;">0.0159457</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02990</td>
+<td style="text-align: left;">elongation factor G</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">518</td>
+<td style="text-align: right;">0.0159457</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02995</td>
+<td style="text-align: left;">elongation factor Tu</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">0.0566645</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_02995</td>
+<td style="text-align: left;">elongation factor Tu</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">0.0566645</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_04195</td>
+<td style="text-align: left;">fatty acid-binding protein DegV</td>
+<td style="text-align: left;">Y</td>
+<td style="text-align: right;">245</td>
+<td style="text-align: right;">-0.1040106</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_04265</td>
+<td style="text-align: left;">HPr kinase/phosphorylase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">305</td>
+<td style="text-align: right;">-0.0182807</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_05485</td>
+<td style="text-align: left;">cytochrome ubiquinol oxidase subunit I</td>
+<td style="text-align: left;">Y</td>
+<td style="text-align: right;">558</td>
+<td style="text-align: right;">0.1656871</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_05685</td>
+<td style="text-align: left;">dihydrolipoyllysine-residue acetyltransferase component of pyruvate dehydrogenase complex</td>
+<td style="text-align: left;">H</td>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">-0.0662171</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_05685</td>
+<td style="text-align: left;">dihydrolipoyllysine-residue acetyltransferase component of pyruvate dehydrogenase complex</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;">-0.0662171</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06085</td>
+<td style="text-align: left;">ornithine carbamoyltransferase</td>
+<td style="text-align: left;">H</td>
+<td style="text-align: right;">272</td>
+<td style="text-align: right;">0.0464719</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06185</td>
+<td style="text-align: left;">cell division protein FtsZ</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">365</td>
+<td style="text-align: right;">0.0980357</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06185</td>
+<td style="text-align: left;">cell division protein FtsZ</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">375</td>
+<td style="text-align: right;">0.0980357</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06410</td>
+<td style="text-align: left;">beta-ketoacyl-ACP reductase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">-0.4807880</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06490</td>
+<td style="text-align: left;">succinyl-CoA ligase subunit alpha</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0.0243014</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06490</td>
+<td style="text-align: left;">succinyl-CoA ligase subunit alpha</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.0243014</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06640</td>
+<td style="text-align: left;">30S ribosomal protein S15</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">-0.0523578</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_06820</td>
+<td style="text-align: left;">glutamine synthetase</td>
+<td style="text-align: left;">Y</td>
+<td style="text-align: right;">395</td>
+<td style="text-align: right;">-0.2959865</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_07110</td>
+<td style="text-align: left;">4-hydroxybenzoyl-CoA thioesterase</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0.2401519</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_08665</td>
+<td style="text-align: left;">molecular chaperone DnaK</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">0.0162274</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_08835</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.3775743</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_08835</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">H</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.3775743</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_08835</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.3775743</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_08890</td>
+<td style="text-align: left;">CsbD family protein</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">0.5302671</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_09545</td>
+<td style="text-align: left;">dipeptidase PepV</td>
+<td style="text-align: left;">Y</td>
+<td style="text-align: right;">337</td>
+<td style="text-align: right;">-0.0305184</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_09590</td>
+<td style="text-align: left;">leucine–tRNA ligase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">580</td>
+<td style="text-align: right;">0.2173194</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_10065</td>
+<td style="text-align: left;">signal transduction protein TRAP</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">150</td>
+<td style="text-align: right;">0.0776091</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_10085</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">-0.1296519</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_10185</td>
+<td style="text-align: left;">glucosamine-6-phosphate isomerase</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">0.0669459</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_11345</td>
+<td style="text-align: left;">ABC transporter ATP-binding protein</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">345</td>
+<td style="text-align: right;">0.0906861</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_11345</td>
+<td style="text-align: left;">ABC transporter ATP-binding protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">349</td>
+<td style="text-align: right;">0.0906861</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_12095</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">0.0723479</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_12150</td>
+<td style="text-align: left;">Asp23/Gls24 family envelope stress response protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">0.1207828</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_12160</td>
+<td style="text-align: left;">hypothetical protein</td>
+<td style="text-align: left;">S</td>
+<td style="text-align: right;">146</td>
+<td style="text-align: right;">-0.0060454</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">only in TSB (lost after pulse)</td>
+<td style="text-align: left;">B7H15_13270</td>
+<td style="text-align: left;">respiratory nitrate reductase subunit gamma</td>
+<td style="text-align: left;">T</td>
+<td style="text-align: right;">200</td>
+<td style="text-align: right;">-0.0510109</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p><em>These are candidates, not confirmed changes. Before using one in the report: plot its raw values, check the depth of the samples (9.3), and check whether the protein itself changed.</em></p>
+</section>
+<section id="summary-of-the-additional-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="summary-of-the-additional-analysis">9.5 Summary of the additional analysis</h3>
+<ul>
+<li>Relaxing the 2/3 filter does not change the main result: still <strong>3</strong> significant phosphosites after 15 min.</li>
+<li>Without any filter, many sites are seen in only one condition, but mostly in just 1 of 3 replicates; part of this pattern is likely due to different detection depth between samples.</li>
+<li>The 3/3 vs 0/3 sites (7 gained, 42 lost after the pulse) are the most promising presence/absence candidates for follow-up.</li>
+</ul>
+<div class="cell">
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>R version 4.4.2 (2024-10-31 ucrt)
@@ -3165,6 +3994,7 @@ loaded via a namespace (and not attached):
 </div>
 <!-- -->
 
+</section>
 </section>
 
 </main>
@@ -3620,247 +4450,387 @@ loaded via a namespace (and not attached):
     }
   });
   </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> &quot;Topic 1: proteome vs phosphoproteome after 15 min PASN&quot;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> &quot;Bio253 HS2026 · group: 15min (names: simona_michelle) · combined analysis&quot;</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>Combined analysis of the two separate notebooks:</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Proteome (Simona):** <span class="in">`../analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd`</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Phosphoproteome (Michelle):** <span class="in">`../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  (Roadmap A as sensitivity analysis: <span class="in">`../analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`</span>)</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>This notebook recomputes both layers with **one shared function**, so that the</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>definitions are guaranteed to be identical. Details, raw-value plots and</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>layer-specific interpretation are in the separate notebooks.</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>Polished parts go to <span class="in">`reports/`</span> at the end.</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="in">```{r setup}</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;../R/setup.R&quot;</span>)</span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Question</span></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>Does *S. aureus* JE2 show early phosphorylation changes after 15 min of</span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>*P. aeruginosa* supernatant (PASN) exposure, before major changes in protein abundance?</span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Hypothesis</span></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**H1:** After 15 min (SNpulse), a larger fraction of reliably measured</span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  phosphosites than proteins changes.</span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**H0:** The fraction of changed phosphosites after 15 min is not larger than</span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>  the fraction of changed proteins.</span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Supporting expectation (proteome notebook): the proteome changes only little</span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>  after 15 min, clearly less than after ~15 h.</span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Data used and shared definitions</span></span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>Both layers use **the same pipeline and the same rules**:</span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Tables:** course DEA results (prolfquapp, vsn normalisation) and per-sample</span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>  normalised abundances; total proteome (<span class="in">`total`</span>) and phosphosites (<span class="in">`phospho_STYH`</span>)</span>
-<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Samples:** wild type JE2 (<span class="in">`anc`</span>): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3 per group</span>
-<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Contrasts:** <span class="in">`TSB_vs_SNpulse_at_anc`</span>, <span class="in">`TSB_vs_SN_at_anc`</span> (<span class="in">`diff &lt; 0`</span> = higher in PASN)</span>
-<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Reliable:** detected in ≥ 2 of 3 replicates in both compared groups</span>
-<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>  (counted from <span class="in">`read_abundances()`</span>, i.e. the values the DEA used) **and**</span>
-<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>  DEA estimate based on observed values (<span class="in">`estimate_type == &quot;observed&quot;`</span>)</span>
-<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Changed:** FDR &lt; 0.05 and |log2FC| &gt; 1</span>
-<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Contaminants removed</span>
-<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>One feature = one protein (<span class="in">`protein_key`</span>) or one phosphosite (<span class="in">`site`</span>)</span>
-<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data}</span></span>
-<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>contr <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, <span class="st">&quot;TSB_vs_SN_at_anc&quot;</span>)</span>
-<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Flags every protein / site as reliable and changed, using the shared definitions.</span></span>
-<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a><span class="co"># key = column that identifies one feature: protein_key (proteins) or site (phosphosites)</span></span>
-<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>flag_changes <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset, key) {</span>
-<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>  n_obs <span class="ot">&lt;-</span> <span class="fu">read_abundances</span>(dataset) <span class="sc">|&gt;</span></span>
-<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(key, <span class="st">&quot;medium&quot;</span>)))) <span class="sc">|&gt;</span></span>
-<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(normalized_abundance)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
-<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_dea</span>(dataset, <span class="at">contrasts =</span> contr) <span class="sc">|&gt;</span></span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(n_obs, <span class="at">by =</span> key) <span class="sc">|&gt;</span></span>
-<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">reliable =</span> <span class="fu">case_when</span>(</span>
-<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>             contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span> <span class="sc">~</span> TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>,</span>
-<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>             contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SN_at_anc&quot;</span>      <span class="sc">~</span> TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SN <span class="sc">&gt;=</span> <span class="dv">2</span>),</span>
-<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>           <span class="at">reliable =</span> <span class="fu">coalesce</span>(reliable, <span class="cn">FALSE</span>) <span class="sc">&amp;</span> estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>,</span>
-<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a>           <span class="at">changed  =</span> FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
-<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a>prot <span class="ot">&lt;-</span> <span class="fu">flag_changes</span>(<span class="st">&quot;total&quot;</span>,        <span class="at">key =</span> <span class="st">&quot;protein_key&quot;</span>)</span>
-<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a>phos <span class="ot">&lt;-</span> <span class="fu">flag_changes</span>(<span class="st">&quot;phospho_STYH&quot;</span>, <span class="at">key =</span> <span class="st">&quot;site&quot;</span>)</span>
-<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Methods</span></span>
-<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-77"><a href="#cb13-77" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Both layers were analysed with the course-provided DEA (prolfquapp, vsn</span>
-<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a>  normalisation, linear model; missing values imputed at the limit of detection).</span>
-<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a>  To avoid fold changes based on imputed values, only features detected in</span>
-<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a>  ≥ 2/3 replicates in both groups **and** with an observed estimate were used.</span>
-<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>For each layer and contrast we computed the **fraction of changed features**</span>
-<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a>  (changed / reliably measured).</span>
-<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>The 15 min fractions of phosphosites and proteins were compared with a</span>
-<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a>  **one-sided Fisher&#39;s exact test** (H1: phospho fraction &gt; protein fraction).</span>
-<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>For each changed phosphosite at 15 min we checked whether **its protein**</span>
-<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a>  changed too (join via <span class="in">`protein_key`</span>), to separate phosphorylation changes</span>
-<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a>  from changes in protein amount.</span>
-<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Sensitivity analysis: Michelle&#39;s Roadmap A (median normalisation, limma,</span>
-<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a>  FDR &lt; 0.10, no imputation) in the phospho notebook.</span>
-<span id="cb13-90"><a href="#cb13-90" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>R, tidyverse and the course helper functions. AI use: see section 8.</span>
-<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Results</span></span>
-<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.1 Fraction of changed features</span></span>
-<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fractions}</span></span>
-<span id="cb13-97"><a href="#cb13-97" aria-hidden="true" tabindex="-1"></a>summary_tbl <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb13-98"><a href="#cb13-98" aria-hidden="true" tabindex="-1"></a>  prot <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">&quot;Total proteome&quot;</span>),</span>
-<span id="cb13-99"><a href="#cb13-99" aria-hidden="true" tabindex="-1"></a>  phos <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">&quot;Phosphoproteome (STYH)&quot;</span>)</span>
-<span id="cb13-100"><a href="#cb13-100" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb13-101"><a href="#cb13-101" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(reliable) <span class="sc">|&gt;</span></span>
-<span id="cb13-102"><a href="#cb13-102" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(layer, contrast) <span class="sc">|&gt;</span></span>
-<span id="cb13-103"><a href="#cb13-103" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_reliable =</span> <span class="fu">n</span>(),</span>
-<span id="cb13-104"><a href="#cb13-104" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_changed  =</span> <span class="fu">sum</span>(changed),</span>
-<span id="cb13-105"><a href="#cb13-105" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_up       =</span> <span class="fu">sum</span>(changed <span class="sc">&amp;</span> diff <span class="sc">&lt;</span> <span class="dv">0</span>),</span>
-<span id="cb13-106"><a href="#cb13-106" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_down     =</span> <span class="fu">sum</span>(changed <span class="sc">&amp;</span> diff <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
-<span id="cb13-107"><a href="#cb13-107" aria-hidden="true" tabindex="-1"></a>            <span class="at">fraction   =</span> n_changed <span class="sc">/</span> n_reliable,</span>
-<span id="cb13-108"><a href="#cb13-108" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-109"><a href="#cb13-109" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">exposure =</span> <span class="fu">if_else</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>,</span>
-<span id="cb13-110"><a href="#cb13-110" aria-hidden="true" tabindex="-1"></a>                            <span class="st">&quot;15 min pulse&quot;</span>, <span class="st">&quot;long-term (~15 h)&quot;</span>),</span>
-<span id="cb13-111"><a href="#cb13-111" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="fu">factor</span>(layer, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Phosphoproteome (STYH)&quot;</span>, <span class="st">&quot;Total proteome&quot;</span>)))</span>
-<span id="cb13-112"><a href="#cb13-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-113"><a href="#cb13-113" aria-hidden="true" tabindex="-1"></a>summary_tbl</span>
-<span id="cb13-114"><a href="#cb13-114" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-115"><a href="#cb13-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-116"><a href="#cb13-116" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-fractions}</span></span>
-<span id="cb13-117"><a href="#cb13-117" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Share of reliably measured proteins / phosphosites that change vs. TSB. Labels: changed / reliably measured.&quot;</span></span>
-<span id="cb13-118"><a href="#cb13-118" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(summary_tbl, <span class="fu">aes</span>(exposure, fraction, <span class="at">fill =</span> exposure)) <span class="sc">+</span></span>
-<span id="cb13-119"><a href="#cb13-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.55</span>) <span class="sc">+</span></span>
-<span id="cb13-120"><a href="#cb13-120" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">paste0</span>(<span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> fraction, <span class="dv">1</span>), <span class="st">&quot;%</span><span class="sc">\n</span><span class="st">(&quot;</span>,</span>
-<span id="cb13-121"><a href="#cb13-121" aria-hidden="true" tabindex="-1"></a>                               n_changed, <span class="st">&quot;/&quot;</span>, n_reliable, <span class="st">&quot;)&quot;</span>)),</span>
-<span id="cb13-122"><a href="#cb13-122" aria-hidden="true" tabindex="-1"></a>            <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">3.5</span>) <span class="sc">+</span></span>
-<span id="cb13-123"><a href="#cb13-123" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> layer) <span class="sc">+</span></span>
-<span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent,</span>
-<span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a>                     <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.25</span>))) <span class="sc">+</span></span>
-<span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;15 min pulse&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4477CC&quot;</span>,</span>
-<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;long-term (~15 h)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#E07040&quot;</span>)) <span class="sc">+</span></span>
-<span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Share of reliably measured features that change vs. TSB&quot;</span>,</span>
-<span id="cb13-129"><a href="#cb13-129" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;S. aureus JE2 (anc), n = 3 per group, |log2FC| &gt; 1, FDR &lt; 0.05&quot;</span>,</span>
-<span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;changed / reliably measured&quot;</span>) <span class="sc">+</span></span>
-<span id="cb13-131"><a href="#cb13-131" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb13-132"><a href="#cb13-132" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>)</span>
-<span id="cb13-133"><a href="#cb13-133" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-134"><a href="#cb13-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-135"><a href="#cb13-135" aria-hidden="true" tabindex="-1"></a>Expected (checked outside R): proteins 35/2003 (1.7 %) at 15 min and 375/1979</span>
-<span id="cb13-136"><a href="#cb13-136" aria-hidden="true" tabindex="-1"></a>(18.9 %) at ~15 h; phosphosites 3/131 (2.3 %) at 15 min and 17/144 (11.8 %) at ~15 h.</span>
-<span id="cb13-137"><a href="#cb13-137" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-138"><a href="#cb13-138" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.2 Test: is the 15 min fraction larger for phosphosites?</span></span>
-<span id="cb13-139"><a href="#cb13-139" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-140"><a href="#cb13-140" aria-hidden="true" tabindex="-1"></a><span class="in">```{r test}</span></span>
-<span id="cb13-141"><a href="#cb13-141" aria-hidden="true" tabindex="-1"></a>early <span class="ot">&lt;-</span> summary_tbl <span class="sc">|&gt;</span> <span class="fu">filter</span>(exposure <span class="sc">==</span> <span class="st">&quot;15 min pulse&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(layer)</span>
-<span id="cb13-142"><a href="#cb13-142" aria-hidden="true" tabindex="-1"></a>early_counts <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="at">changed     =</span> early<span class="sc">$</span>n_changed,</span>
-<span id="cb13-143"><a href="#cb13-143" aria-hidden="true" tabindex="-1"></a>                      <span class="at">not_changed =</span> early<span class="sc">$</span>n_reliable <span class="sc">-</span> early<span class="sc">$</span>n_changed)</span>
-<span id="cb13-144"><a href="#cb13-144" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(early_counts) <span class="ot">&lt;-</span> <span class="fu">as.character</span>(early<span class="sc">$</span>layer)</span>
-<span id="cb13-145"><a href="#cb13-145" aria-hidden="true" tabindex="-1"></a>early_counts</span>
-<span id="cb13-146"><a href="#cb13-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-147"><a href="#cb13-147" aria-hidden="true" tabindex="-1"></a><span class="co"># one-sided: phospho fraction (row 1) &gt; protein fraction (row 2)</span></span>
-<span id="cb13-148"><a href="#cb13-148" aria-hidden="true" tabindex="-1"></a><span class="fu">fisher.test</span>(early_counts, <span class="at">alternative =</span> <span class="st">&quot;greater&quot;</span>)</span>
-<span id="cb13-149"><a href="#cb13-149" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-150"><a href="#cb13-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-151"><a href="#cb13-151" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.3 Changed phosphosites at 15 min: did their protein change too?</span></span>
-<span id="cb13-152"><a href="#cb13-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-153"><a href="#cb13-153" aria-hidden="true" tabindex="-1"></a><span class="in">```{r overlap}</span></span>
-<span id="cb13-154"><a href="#cb13-154" aria-hidden="true" tabindex="-1"></a>prot_early <span class="ot">&lt;-</span> prot <span class="sc">|&gt;</span></span>
-<span id="cb13-155"><a href="#cb13-155" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-156"><a href="#cb13-156" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, <span class="at">diff_protein =</span> diff, <span class="at">FDR_protein =</span> FDR)</span>
-<span id="cb13-157"><a href="#cb13-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-158"><a href="#cb13-158" aria-hidden="true" tabindex="-1"></a>phos <span class="sc">|&gt;</span></span>
-<span id="cb13-159"><a href="#cb13-159" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, reliable, changed) <span class="sc">|&gt;</span></span>
-<span id="cb13-160"><a href="#cb13-160" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, locus_tag, product, residue, position,</span>
-<span id="cb13-161"><a href="#cb13-161" aria-hidden="true" tabindex="-1"></a>         <span class="at">diff_site =</span> diff, <span class="at">FDR_site =</span> FDR) <span class="sc">|&gt;</span></span>
-<span id="cb13-162"><a href="#cb13-162" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(prot_early, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-163"><a href="#cb13-163" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">protein_changed =</span> FDR_protein <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff_protein) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-164"><a href="#cb13-164" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(FDR_site)</span>
-<span id="cb13-165"><a href="#cb13-165" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-166"><a href="#cb13-166" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-167"><a href="#cb13-167" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.4 Raw values of the early phosphosites</span></span>
-<span id="cb13-168"><a href="#cb13-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-169"><a href="#cb13-169" aria-hidden="true" tabindex="-1"></a><span class="in">```{r raw-sites}</span></span>
-<span id="cb13-170"><a href="#cb13-170" aria-hidden="true" tabindex="-1"></a>early_sites <span class="ot">&lt;-</span> phos <span class="sc">|&gt;</span></span>
-<span id="cb13-171"><a href="#cb13-171" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, reliable, changed) <span class="sc">|&gt;</span></span>
-<span id="cb13-172"><a href="#cb13-172" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(site)</span>
-<span id="cb13-173"><a href="#cb13-173" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-174"><a href="#cb13-174" aria-hidden="true" tabindex="-1"></a><span class="fu">read_abundances</span>(<span class="st">&quot;phospho_STYH&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-175"><a href="#cb13-175" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, site <span class="sc">%in%</span> early_sites) <span class="sc">|&gt;</span></span>
-<span id="cb13-176"><a href="#cb13-176" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> <span class="fu">paste</span>(locus_tag, <span class="fu">paste0</span>(residue, position))) <span class="sc">|&gt;</span></span>
-<span id="cb13-177"><a href="#cb13-177" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(medium, normalized_abundance)) <span class="sc">+</span></span>
-<span id="cb13-178"><a href="#cb13-178" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.05</span>, <span class="at">height =</span> <span class="dv">0</span>, <span class="at">seed =</span> <span class="dv">1</span>),</span>
-<span id="cb13-179"><a href="#cb13-179" aria-hidden="true" tabindex="-1"></a>             <span class="at">colour =</span> <span class="st">&quot;#0072B2&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb13-180"><a href="#cb13-180" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> label, <span class="at">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="sc">+</span></span>
-<span id="cb13-181"><a href="#cb13-181" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;medium&quot;</span>, <span class="at">y =</span> <span class="st">&quot;normalised abundance (log2)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb13-182"><a href="#cb13-182" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
-<span id="cb13-183"><a href="#cb13-183" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb13-184"><a href="#cb13-184" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-185"><a href="#cb13-185" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.5 Summary of the results</span></span>
-<span id="cb13-186"><a href="#cb13-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-187"><a href="#cb13-187" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>After 15 min, both layers changed very little: **1.7 %** of proteins</span>
-<span id="cb13-188"><a href="#cb13-188" aria-hidden="true" tabindex="-1"></a>  (35/2003) and **2.3 %** of phosphosites (3/131).</span>
-<span id="cb13-189"><a href="#cb13-189" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>The phosphosite fraction is slightly higher, but this is based on only</span>
-<span id="cb13-190"><a href="#cb13-190" aria-hidden="true" tabindex="-1"></a>  3 sites and is not significant (one-sided Fisher&#39;s exact test, p ≈ 0.42).</span>
-<span id="cb13-191"><a href="#cb13-191" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>After ~15 h, both layers changed much more: 18.9 % of proteins (375/1979) and</span>
-<span id="cb13-192"><a href="#cb13-192" aria-hidden="true" tabindex="-1"></a>  11.8 % of phosphosites (17/144).</span>
-<span id="cb13-193"><a href="#cb13-193" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Of the 3 early phosphosites, 2 changed **without** a change in their protein</span>
-<span id="cb13-194"><a href="#cb13-194" aria-hidden="true" tabindex="-1"></a>  (5&#39;-nucleotidase S33, up in PASN; hypothetical protein B7H15_05655 T21, down);</span>
-<span id="cb13-195"><a href="#cb13-195" aria-hidden="true" tabindex="-1"></a>  for IsaA S194 the increase is largely explained by more IsaA protein.</span>
-<span id="cb13-196"><a href="#cb13-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-197"><a href="#cb13-197" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Caveats</span></span>
-<span id="cb13-198"><a href="#cb13-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-199"><a href="#cb13-199" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Few reliable phosphosites.** Only ~130–145 phosphosites pass the filter,</span>
-<span id="cb13-200"><a href="#cb13-200" aria-hidden="true" tabindex="-1"></a>   compared with ~2000 proteins. The phospho analysis therefore has much less</span>
-<span id="cb13-201"><a href="#cb13-201" aria-hidden="true" tabindex="-1"></a>   power, and single sites change the percentage a lot (1 site = 0.8 %).</span>
-<span id="cb13-202"><a href="#cb13-202" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Pipeline choice matters for phospho.** With Roadmap A (Michelle) the</span>
-<span id="cb13-203"><a href="#cb13-203" aria-hidden="true" tabindex="-1"></a>   numbers differ (15 min: 2/200 = 1.0 %; ~15 h: 102/311 = 32.8 %), and without</span>
-<span id="cb13-204"><a href="#cb13-204" aria-hidden="true" tabindex="-1"></a>   the <span class="in">`observed`</span> filter the course DEA gives 5/208 at 15 min. The 15 min</span>
-<span id="cb13-205"><a href="#cb13-205" aria-hidden="true" tabindex="-1"></a>   conclusion is the same in all variants; the ~15 h phospho fraction is not robust.</span>
-<span id="cb13-206"><a href="#cb13-206" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Imputed estimates.** Many phospho estimates in the course DEA are imputed,</span>
-<span id="cb13-207"><a href="#cb13-207" aria-hidden="true" tabindex="-1"></a>   even for sites detected in ≥ 2/3 replicates. Excluding them is conservative,</span>
-<span id="cb13-208"><a href="#cb13-208" aria-hidden="true" tabindex="-1"></a>   but it also removed interesting candidates (e.g. Stk1/PknB T161/S162, see</span>
-<span id="cb13-209"><a href="#cb13-209" aria-hidden="true" tabindex="-1"></a>   phospho notebook) and HPr H15 only appears in Roadmap A.</span>
-<span id="cb13-210"><a href="#cb13-210" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Phosphosite signal vs occupancy.** A higher phosphosite signal can mean</span>
-<span id="cb13-211"><a href="#cb13-211" aria-hidden="true" tabindex="-1"></a>   more phosphorylation or more protein; we checked the protein level only for</span>
-<span id="cb13-212"><a href="#cb13-212" aria-hidden="true" tabindex="-1"></a>   the changed sites (5.3).</span>
-<span id="cb13-213"><a href="#cb13-213" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**STYH search and site localisation:** histidine sites and closely spaced</span>
-<span id="cb13-214"><a href="#cb13-214" aria-hidden="true" tabindex="-1"></a>   sites on the same peptide are uncertain.</span>
-<span id="cb13-215"><a href="#cb13-215" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**From the proteome notebook:** 15 min vs ~15 h also differs in medium and</span>
-<span id="cb13-216"><a href="#cb13-216" aria-hidden="true" tabindex="-1"></a>   growth state; n = 3; thresholds determine the counts; groups measured as blocks</span>
-<span id="cb13-217"><a href="#cb13-217" aria-hidden="true" tabindex="-1"></a>   (run order); pulse samples possibly prepared separately.</span>
-<span id="cb13-218"><a href="#cb13-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-219"><a href="#cb13-219" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Conclusion and next steps</span></span>
-<span id="cb13-220"><a href="#cb13-220" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-221"><a href="#cb13-221" aria-hidden="true" tabindex="-1"></a>*Draft:* We hypothesised that after 15 min of PASN exposure a larger fraction of</span>
-<span id="cb13-222"><a href="#cb13-222" aria-hidden="true" tabindex="-1"></a>reliably measured phosphosites than proteins changes (H1). Our data do **not**</span>
-<span id="cb13-223"><a href="#cb13-223" aria-hidden="true" tabindex="-1"></a>support H1: after 15 min, 2.3 % of phosphosites (3/131) and 1.7 % of proteins</span>
-<span id="cb13-224"><a href="#cb13-224" aria-hidden="true" tabindex="-1"></a>(35/2003) changed, a difference that is not significant (p ≈ 0.42). Both layers</span>
-<span id="cb13-225"><a href="#cb13-225" aria-hidden="true" tabindex="-1"></a>responded little after 15 min and much more after ~15 h. A few early</span>
-<span id="cb13-226"><a href="#cb13-226" aria-hidden="true" tabindex="-1"></a>phosphorylation changes occurred without a change in protein amount</span>
-<span id="cb13-227"><a href="#cb13-227" aria-hidden="true" tabindex="-1"></a>(e.g. 5&#39;-nucleotidase S33), but given the low phospho coverage we cannot</span>
-<span id="cb13-228"><a href="#cb13-228" aria-hidden="true" tabindex="-1"></a>conclude that the phospho layer reacts first.</span>
-<span id="cb13-229"><a href="#cb13-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-230"><a href="#cb13-230" aria-hidden="true" tabindex="-1"></a>*Next steps:* deeper phospho coverage (more replicates, more enrichment input);</span>
-<span id="cb13-231"><a href="#cb13-231" aria-hidden="true" tabindex="-1"></a>validate early candidates (5&#39;-nucleotidase S33, Stk1 T161/S162, HPr H15) in the</span>
-<span id="cb13-232"><a href="#cb13-232" aria-hidden="true" tabindex="-1"></a><span class="in">`stk`</span>/<span class="in">`stp`</span> mutants; time course with intermediate time points.</span>
-<span id="cb13-233"><a href="#cb13-233" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-234"><a href="#cb13-234" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Sources</span></span>
-<span id="cb13-235"><a href="#cb13-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-236"><a href="#cb13-236" aria-hidden="true" tabindex="-1"></a>*Combine the sources sections of both notebooks here (papers, UniProt IDs,</span>
-<span id="cb13-237"><a href="#cb13-237" aria-hidden="true" tabindex="-1"></a>course data, AI use).*</span>
-<span id="cb13-238"><a href="#cb13-238" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-239"><a href="#cb13-239" aria-hidden="true" tabindex="-1"></a><span class="in">```{r session}</span></span>
-<span id="cb13-240"><a href="#cb13-240" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb13-241"><a href="#cb13-241" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> &quot;Topic 1: proteome vs phosphoproteome after 15 min PASN&quot;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> &quot;Bio253 HS2026 · group: 15min (names: simona_michelle) · combined analysis&quot;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>Combined analysis of the two separate notebooks:</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Proteome (Simona):** <span class="in">`../analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd`</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Phosphoproteome (Michelle):** <span class="in">`../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  (Roadmap A as sensitivity analysis: <span class="in">`../analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`</span>)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>This notebook recomputes both layers with **one shared function**, so that the</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>definitions are guaranteed to be identical. Details, raw-value plots and</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>layer-specific interpretation are in the separate notebooks.</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>Polished parts go to <span class="in">`reports/`</span> at the end.</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="in">```{r setup}</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;../R/setup.R&quot;</span>)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Question</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>Does *S. aureus* JE2 show early phosphorylation changes after 15 min of</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>*P. aeruginosa* supernatant (PASN) exposure, before major changes in protein abundance?</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Hypothesis</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**H1:** After 15 min (SNpulse), a larger fraction of reliably measured</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>  phosphosites than proteins changes.</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**H0:** The fraction of changed phosphosites after 15 min is not larger than</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>  the fraction of changed proteins.</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Supporting expectation (proteome notebook): the proteome changes only little</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>  after 15 min, clearly less than after ~15 h.</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Data used and shared definitions</span></span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>Both layers use **the same pipeline and the same rules**:</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Tables:** course DEA results (prolfquapp, vsn normalisation) and per-sample</span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>  normalised abundances; total proteome (<span class="in">`total`</span>) and phosphosites (<span class="in">`phospho_STYH`</span>)</span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>  -&gt; DEA means differential expression analysis. It’s the statistical comparison between groups, like   TSB vs SN in the wild type.</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>  -&gt; prolfquapp is the R tool from the Functional Genomics Center Zurich that produced these results.   You didn’t run it yourselves; the course provides its output as Excel files.</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>  -&gt; vsn (variance stabilising normalisation) is how the intensities were made comparable between     samples before testing. It corrects for small differences in how much material was injected. It also   makes the noise similar for low- and high-abundance proteins</span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Samples:** wild type JE2 (<span class="in">`anc`</span>): TSB, SNpulse (15 min PASN), SN (~15 h PASN); n = 3 per group</span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Contrasts:** <span class="in">`TSB_vs_SNpulse_at_anc`</span>, <span class="in">`TSB_vs_SN_at_anc`</span> (<span class="in">`diff &lt; 0`</span> = higher in PASN)</span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Reliable:** detected in ≥ 2 of 3 replicates in both compared groups</span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>  (counted from <span class="in">`read_abundances()`</span>, i.e. the values the DEA used) **and**</span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>  DEA estimate based on observed values (<span class="in">`estimate_type == &quot;observed&quot;`</span>)</span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>**Changed:** FDR &lt; 0.05 and |log2FC| &gt; 1</span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Contaminants removed</span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>One feature = one protein (<span class="in">`protein_key`</span>) or one phosphosite (<span class="in">`site`</span>)</span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data}</span></span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>contr <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, <span class="st">&quot;TSB_vs_SN_at_anc&quot;</span>)</span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Flags every protein / site as reliable and changed, using the shared definitions.</span></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a><span class="co"># key = column that identifies one feature: protein_key (proteins) or site (phosphosites)</span></span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>flag_changes <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset, key) {</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>  n_obs <span class="ot">&lt;-</span> <span class="fu">read_abundances</span>(dataset) <span class="sc">|&gt;</span></span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(key, <span class="st">&quot;medium&quot;</span>)))) <span class="sc">|&gt;</span></span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(normalized_abundance)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_dea</span>(dataset, <span class="at">contrasts =</span> contr) <span class="sc">|&gt;</span></span>
+<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(n_obs, <span class="at">by =</span> key) <span class="sc">|&gt;</span></span>
+<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">reliable =</span> <span class="fu">case_when</span>(</span>
+<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a>             contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span> <span class="sc">~</span> TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>,</span>
+<span id="cb19-69"><a href="#cb19-69" aria-hidden="true" tabindex="-1"></a>             contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SN_at_anc&quot;</span>      <span class="sc">~</span> TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SN <span class="sc">&gt;=</span> <span class="dv">2</span>),</span>
+<span id="cb19-70"><a href="#cb19-70" aria-hidden="true" tabindex="-1"></a>           <span class="at">reliable =</span> <span class="fu">coalesce</span>(reliable, <span class="cn">FALSE</span>) <span class="sc">&amp;</span> estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>,</span>
+<span id="cb19-71"><a href="#cb19-71" aria-hidden="true" tabindex="-1"></a>           <span class="at">changed  =</span> FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb19-72"><a href="#cb19-72" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-73"><a href="#cb19-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-74"><a href="#cb19-74" aria-hidden="true" tabindex="-1"></a>prot <span class="ot">&lt;-</span> <span class="fu">flag_changes</span>(<span class="st">&quot;total&quot;</span>,        <span class="at">key =</span> <span class="st">&quot;protein_key&quot;</span>)</span>
+<span id="cb19-75"><a href="#cb19-75" aria-hidden="true" tabindex="-1"></a>phos <span class="ot">&lt;-</span> <span class="fu">flag_changes</span>(<span class="st">&quot;phospho_STYH&quot;</span>, <span class="at">key =</span> <span class="st">&quot;site&quot;</span>)</span>
+<span id="cb19-76"><a href="#cb19-76" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-77"><a href="#cb19-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-78"><a href="#cb19-78" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Methods</span></span>
+<span id="cb19-79"><a href="#cb19-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-80"><a href="#cb19-80" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Both layers were analysed with the course-provided DEA (prolfquapp, vsn</span>
+<span id="cb19-81"><a href="#cb19-81" aria-hidden="true" tabindex="-1"></a>  normalisation, linear model; missing values imputed at the limit of detection).</span>
+<span id="cb19-82"><a href="#cb19-82" aria-hidden="true" tabindex="-1"></a>  To avoid fold changes based on imputed values, only features detected in</span>
+<span id="cb19-83"><a href="#cb19-83" aria-hidden="true" tabindex="-1"></a>  ≥ 2/3 replicates in both groups **and** with an observed estimate were used.</span>
+<span id="cb19-84"><a href="#cb19-84" aria-hidden="true" tabindex="-1"></a>-&gt; Imputation means filling in a value. Here it’s filled in at the LOD: the missing group mean is replaced by a low value that represents “about as low as we can still measure”. That value is typically taken from the lowest intensities observed in the dataset.</span>
+<span id="cb19-85"><a href="#cb19-85" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>For each layer and contrast we computed the **fraction of changed features**</span>
+<span id="cb19-86"><a href="#cb19-86" aria-hidden="true" tabindex="-1"></a>  (changed / reliably measured).</span>
+<span id="cb19-87"><a href="#cb19-87" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>The 15 min fractions of phosphosites and proteins were compared with a</span>
+<span id="cb19-88"><a href="#cb19-88" aria-hidden="true" tabindex="-1"></a>  **one-sided Fisher&#39;s exact test** (H1: phospho fraction &gt; protein fraction).</span>
+<span id="cb19-89"><a href="#cb19-89" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>For each changed phosphosite at 15 min we checked whether **its protein**</span>
+<span id="cb19-90"><a href="#cb19-90" aria-hidden="true" tabindex="-1"></a>  changed too (join via <span class="in">`protein_key`</span>), to separate phosphorylation changes</span>
+<span id="cb19-91"><a href="#cb19-91" aria-hidden="true" tabindex="-1"></a>  from changes in protein amount.</span>
+<span id="cb19-92"><a href="#cb19-92" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Sensitivity analysis: Michelle&#39;s Roadmap A (median normalisation, limma,</span>
+<span id="cb19-93"><a href="#cb19-93" aria-hidden="true" tabindex="-1"></a>  FDR &lt; 0.10, no imputation) in the phospho notebook.</span>
+<span id="cb19-94"><a href="#cb19-94" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>R, tidyverse and the course helper functions. AI use: see section 8.</span>
+<span id="cb19-95"><a href="#cb19-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-96"><a href="#cb19-96" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Results</span></span>
+<span id="cb19-97"><a href="#cb19-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-98"><a href="#cb19-98" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.1 Fraction of changed features</span></span>
+<span id="cb19-99"><a href="#cb19-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-100"><a href="#cb19-100" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fractions}</span></span>
+<span id="cb19-101"><a href="#cb19-101" aria-hidden="true" tabindex="-1"></a>summary_tbl <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb19-102"><a href="#cb19-102" aria-hidden="true" tabindex="-1"></a>  prot <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">&quot;Total proteome&quot;</span>),</span>
+<span id="cb19-103"><a href="#cb19-103" aria-hidden="true" tabindex="-1"></a>  phos <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">&quot;Phosphoproteome (STYH)&quot;</span>)</span>
+<span id="cb19-104"><a href="#cb19-104" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb19-105"><a href="#cb19-105" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(reliable) <span class="sc">|&gt;</span></span>
+<span id="cb19-106"><a href="#cb19-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(layer, contrast) <span class="sc">|&gt;</span></span>
+<span id="cb19-107"><a href="#cb19-107" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_reliable =</span> <span class="fu">n</span>(),</span>
+<span id="cb19-108"><a href="#cb19-108" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_changed  =</span> <span class="fu">sum</span>(changed),</span>
+<span id="cb19-109"><a href="#cb19-109" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_up       =</span> <span class="fu">sum</span>(changed <span class="sc">&amp;</span> diff <span class="sc">&lt;</span> <span class="dv">0</span>),</span>
+<span id="cb19-110"><a href="#cb19-110" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_down     =</span> <span class="fu">sum</span>(changed <span class="sc">&amp;</span> diff <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb19-111"><a href="#cb19-111" aria-hidden="true" tabindex="-1"></a>            <span class="at">fraction   =</span> n_changed <span class="sc">/</span> n_reliable,</span>
+<span id="cb19-112"><a href="#cb19-112" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-113"><a href="#cb19-113" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">exposure =</span> <span class="fu">if_else</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>,</span>
+<span id="cb19-114"><a href="#cb19-114" aria-hidden="true" tabindex="-1"></a>                            <span class="st">&quot;15 min pulse&quot;</span>, <span class="st">&quot;long-term (~15 h)&quot;</span>),</span>
+<span id="cb19-115"><a href="#cb19-115" aria-hidden="true" tabindex="-1"></a>         <span class="at">layer =</span> <span class="fu">factor</span>(layer, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Phosphoproteome (STYH)&quot;</span>, <span class="st">&quot;Total proteome&quot;</span>)))</span>
+<span id="cb19-116"><a href="#cb19-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-117"><a href="#cb19-117" aria-hidden="true" tabindex="-1"></a>summary_tbl</span>
+<span id="cb19-118"><a href="#cb19-118" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-119"><a href="#cb19-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-120"><a href="#cb19-120" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot-fractions}</span></span>
+<span id="cb19-121"><a href="#cb19-121" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Share of reliably measured proteins / phosphosites that change vs. TSB. Labels: changed / reliably measured.&quot;</span></span>
+<span id="cb19-122"><a href="#cb19-122" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(summary_tbl, <span class="fu">aes</span>(exposure, fraction, <span class="at">fill =</span> exposure)) <span class="sc">+</span></span>
+<span id="cb19-123"><a href="#cb19-123" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.55</span>) <span class="sc">+</span></span>
+<span id="cb19-124"><a href="#cb19-124" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">paste0</span>(<span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> fraction, <span class="dv">1</span>), <span class="st">&quot;%</span><span class="sc">\n</span><span class="st">(&quot;</span>,</span>
+<span id="cb19-125"><a href="#cb19-125" aria-hidden="true" tabindex="-1"></a>                               n_changed, <span class="st">&quot;/&quot;</span>, n_reliable, <span class="st">&quot;)&quot;</span>)),</span>
+<span id="cb19-126"><a href="#cb19-126" aria-hidden="true" tabindex="-1"></a>            <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">3.5</span>) <span class="sc">+</span></span>
+<span id="cb19-127"><a href="#cb19-127" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> layer) <span class="sc">+</span></span>
+<span id="cb19-128"><a href="#cb19-128" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent,</span>
+<span id="cb19-129"><a href="#cb19-129" aria-hidden="true" tabindex="-1"></a>                     <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.25</span>))) <span class="sc">+</span></span>
+<span id="cb19-130"><a href="#cb19-130" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;15 min pulse&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4477CC&quot;</span>,</span>
+<span id="cb19-131"><a href="#cb19-131" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;long-term (~15 h)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#E07040&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb19-132"><a href="#cb19-132" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Share of reliably measured features that change vs. TSB&quot;</span>,</span>
+<span id="cb19-133"><a href="#cb19-133" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;S. aureus JE2 (anc), n = 3 per group, |log2FC| &gt; 1, FDR &lt; 0.05&quot;</span>,</span>
+<span id="cb19-134"><a href="#cb19-134" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;changed / reliably measured&quot;</span>) <span class="sc">+</span></span>
+<span id="cb19-135"><a href="#cb19-135" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb19-136"><a href="#cb19-136" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>)</span>
+<span id="cb19-137"><a href="#cb19-137" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-138"><a href="#cb19-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-139"><a href="#cb19-139" aria-hidden="true" tabindex="-1"></a>Expected (checked outside R): proteins 35/2003 (1.7 %) at 15 min and 375/1979</span>
+<span id="cb19-140"><a href="#cb19-140" aria-hidden="true" tabindex="-1"></a>(18.9 %) at ~15 h; phosphosites 3/131 (2.3 %) at 15 min and 17/144 (11.8 %) at ~15 h.</span>
+<span id="cb19-141"><a href="#cb19-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-142"><a href="#cb19-142" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.2 Test: is the 15 min fraction larger for phosphosites?</span></span>
+<span id="cb19-143"><a href="#cb19-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-144"><a href="#cb19-144" aria-hidden="true" tabindex="-1"></a><span class="in">```{r test}</span></span>
+<span id="cb19-145"><a href="#cb19-145" aria-hidden="true" tabindex="-1"></a>early <span class="ot">&lt;-</span> summary_tbl <span class="sc">|&gt;</span> <span class="fu">filter</span>(exposure <span class="sc">==</span> <span class="st">&quot;15 min pulse&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(layer)</span>
+<span id="cb19-146"><a href="#cb19-146" aria-hidden="true" tabindex="-1"></a>early_counts <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="at">changed     =</span> early<span class="sc">$</span>n_changed,</span>
+<span id="cb19-147"><a href="#cb19-147" aria-hidden="true" tabindex="-1"></a>                      <span class="at">not_changed =</span> early<span class="sc">$</span>n_reliable <span class="sc">-</span> early<span class="sc">$</span>n_changed)</span>
+<span id="cb19-148"><a href="#cb19-148" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(early_counts) <span class="ot">&lt;-</span> <span class="fu">as.character</span>(early<span class="sc">$</span>layer)</span>
+<span id="cb19-149"><a href="#cb19-149" aria-hidden="true" tabindex="-1"></a>early_counts</span>
+<span id="cb19-150"><a href="#cb19-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-151"><a href="#cb19-151" aria-hidden="true" tabindex="-1"></a><span class="co"># one-sided: phospho fraction (row 1) &gt; protein fraction (row 2)</span></span>
+<span id="cb19-152"><a href="#cb19-152" aria-hidden="true" tabindex="-1"></a><span class="fu">fisher.test</span>(early_counts, <span class="at">alternative =</span> <span class="st">&quot;greater&quot;</span>)</span>
+<span id="cb19-153"><a href="#cb19-153" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-154"><a href="#cb19-154" aria-hidden="true" tabindex="-1"></a>Odds ratio = 1.32: the odds of a phosphosite being “changed” are about 1.3 times the odds for a protein. That points in the direction you expected, but only weakly.</span>
+<span id="cb19-155"><a href="#cb19-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-156"><a href="#cb19-156" aria-hidden="true" tabindex="-1"></a>p = 0.416: if there were truly no difference, you’d see a difference at least this big about 42 % of the time. That’s far from the usual 0.05 threshold.</span>
+<span id="cb19-157"><a href="#cb19-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-158"><a href="#cb19-158" aria-hidden="true" tabindex="-1"></a>95 % CI from 0.34 to ∞: the interval includes 1 (no difference), which confirms the result isn’t significant. Because the test is one-sided, the upper limit is ∞.</span>
+<span id="cb19-159"><a href="#cb19-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-160"><a href="#cb19-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-161"><a href="#cb19-161" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.3 Changed phosphosites at 15 min: did their protein change too?</span></span>
+<span id="cb19-162"><a href="#cb19-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-163"><a href="#cb19-163" aria-hidden="true" tabindex="-1"></a><span class="in">```{r overlap}</span></span>
+<span id="cb19-164"><a href="#cb19-164" aria-hidden="true" tabindex="-1"></a>prot_early <span class="ot">&lt;-</span> prot <span class="sc">|&gt;</span></span>
+<span id="cb19-165"><a href="#cb19-165" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-166"><a href="#cb19-166" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, <span class="at">diff_protein =</span> diff, <span class="at">FDR_protein =</span> FDR)</span>
+<span id="cb19-167"><a href="#cb19-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-168"><a href="#cb19-168" aria-hidden="true" tabindex="-1"></a>phos <span class="sc">|&gt;</span></span>
+<span id="cb19-169"><a href="#cb19-169" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, reliable, changed) <span class="sc">|&gt;</span></span>
+<span id="cb19-170"><a href="#cb19-170" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, locus_tag, product, residue, position,</span>
+<span id="cb19-171"><a href="#cb19-171" aria-hidden="true" tabindex="-1"></a>         <span class="at">diff_site =</span> diff, <span class="at">FDR_site =</span> FDR) <span class="sc">|&gt;</span></span>
+<span id="cb19-172"><a href="#cb19-172" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(prot_early, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-173"><a href="#cb19-173" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">protein_changed =</span> FDR_protein <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff_protein) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-174"><a href="#cb19-174" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(FDR_site)</span>
+<span id="cb19-175"><a href="#cb19-175" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-176"><a href="#cb19-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-177"><a href="#cb19-177" aria-hidden="true" tabindex="-1"></a>The question:</span>
+<span id="cb19-178"><a href="#cb19-178" aria-hidden="true" tabindex="-1"></a>When a phosphosite changes, there are two possible reasons:</span>
+<span id="cb19-179"><a href="#cb19-179" aria-hidden="true" tabindex="-1"></a>-&gt; Real change in phosphorylation: the same amount of protein, but a different fraction of it is phosphorylated. This is the interesting case, a signalling event.</span>
+<span id="cb19-180"><a href="#cb19-180" aria-hidden="true" tabindex="-1"></a>-&gt; The protein amount itself changed: more protein means more phosphopeptide, even if the phosphorylated fraction stays the same.</span>
+<span id="cb19-181"><a href="#cb19-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-182"><a href="#cb19-182" aria-hidden="true" tabindex="-1"></a>Two of the three sites look like real phosphorylation changes. The third (IsaA) is mostly explained by more protein. Contrast TSB_vs_SNpulse_at_anc is the wild type; a positive diff means higher in TSB, a negative diff means higher after the 15-min PASN pulse.</span>
+<span id="cb19-183"><a href="#cb19-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-184"><a href="#cb19-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-185"><a href="#cb19-185" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.4 Raw values of the early phosphosites</span></span>
+<span id="cb19-186"><a href="#cb19-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-187"><a href="#cb19-187" aria-hidden="true" tabindex="-1"></a><span class="in">```{r raw-sites}</span></span>
+<span id="cb19-188"><a href="#cb19-188" aria-hidden="true" tabindex="-1"></a>early_sites <span class="ot">&lt;-</span> phos <span class="sc">|&gt;</span></span>
+<span id="cb19-189"><a href="#cb19-189" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>, reliable, changed) <span class="sc">|&gt;</span></span>
+<span id="cb19-190"><a href="#cb19-190" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(site)</span>
+<span id="cb19-191"><a href="#cb19-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-192"><a href="#cb19-192" aria-hidden="true" tabindex="-1"></a><span class="fu">read_abundances</span>(<span class="st">&quot;phospho_STYH&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-193"><a href="#cb19-193" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, site <span class="sc">%in%</span> early_sites) <span class="sc">|&gt;</span></span>
+<span id="cb19-194"><a href="#cb19-194" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> <span class="fu">paste</span>(locus_tag, <span class="fu">paste0</span>(residue, position))) <span class="sc">|&gt;</span></span>
+<span id="cb19-195"><a href="#cb19-195" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(medium, normalized_abundance)) <span class="sc">+</span></span>
+<span id="cb19-196"><a href="#cb19-196" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.05</span>, <span class="at">height =</span> <span class="dv">0</span>, <span class="at">seed =</span> <span class="dv">1</span>),</span>
+<span id="cb19-197"><a href="#cb19-197" aria-hidden="true" tabindex="-1"></a>             <span class="at">colour =</span> <span class="st">&quot;#0072B2&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb19-198"><a href="#cb19-198" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> label, <span class="at">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="sc">+</span></span>
+<span id="cb19-199"><a href="#cb19-199" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;medium&quot;</span>, <span class="at">y =</span> <span class="st">&quot;normalised abundance (log2)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb19-200"><a href="#cb19-200" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb19-201"><a href="#cb19-201" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-202"><a href="#cb19-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-203"><a href="#cb19-203" aria-hidden="true" tabindex="-1"></a><span class="fu">### 5.5 Summary of the results</span></span>
+<span id="cb19-204"><a href="#cb19-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-205"><a href="#cb19-205" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>After 15 min, both layers changed very little: **1.7 %** of proteins</span>
+<span id="cb19-206"><a href="#cb19-206" aria-hidden="true" tabindex="-1"></a>  (35/2003) and **2.3 %** of phosphosites (3/131).</span>
+<span id="cb19-207"><a href="#cb19-207" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>The phosphosite fraction is slightly higher, but this is based on only</span>
+<span id="cb19-208"><a href="#cb19-208" aria-hidden="true" tabindex="-1"></a>  3 sites and is not significant (one-sided Fisher&#39;s exact test, p ≈ 0.42).</span>
+<span id="cb19-209"><a href="#cb19-209" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>After ~15 h, both layers changed much more: 18.9 % of proteins (375/1979) and</span>
+<span id="cb19-210"><a href="#cb19-210" aria-hidden="true" tabindex="-1"></a>  11.8 % of phosphosites (17/144).</span>
+<span id="cb19-211"><a href="#cb19-211" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Of the 3 early phosphosites, 2 changed **without** a change in their protein</span>
+<span id="cb19-212"><a href="#cb19-212" aria-hidden="true" tabindex="-1"></a>  (5&#39;-nucleotidase S33, up in PASN; hypothetical protein B7H15_05655 T21, down);</span>
+<span id="cb19-213"><a href="#cb19-213" aria-hidden="true" tabindex="-1"></a>  for IsaA S194 the increase is largely explained by more IsaA protein.</span>
+<span id="cb19-214"><a href="#cb19-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-215"><a href="#cb19-215" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Caveats</span></span>
+<span id="cb19-216"><a href="#cb19-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-217"><a href="#cb19-217" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Few reliable phosphosites.** Only ~130–145 phosphosites pass the filter,</span>
+<span id="cb19-218"><a href="#cb19-218" aria-hidden="true" tabindex="-1"></a>   compared with ~2000 proteins. The phospho analysis therefore has much less</span>
+<span id="cb19-219"><a href="#cb19-219" aria-hidden="true" tabindex="-1"></a>   power, and single sites change the percentage a lot (1 site = 0.8 %).</span>
+<span id="cb19-220"><a href="#cb19-220" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Pipeline choice matters for phospho.** With Roadmap A (Michelle) the</span>
+<span id="cb19-221"><a href="#cb19-221" aria-hidden="true" tabindex="-1"></a>   numbers differ (15 min: 2/200 = 1.0 %; ~15 h: 102/311 = 32.8 %), and without</span>
+<span id="cb19-222"><a href="#cb19-222" aria-hidden="true" tabindex="-1"></a>   the <span class="in">`observed`</span> filter the course DEA gives 5/208 at 15 min. The 15 min</span>
+<span id="cb19-223"><a href="#cb19-223" aria-hidden="true" tabindex="-1"></a>   conclusion is the same in all variants; the ~15 h phospho fraction is not robust.</span>
+<span id="cb19-224"><a href="#cb19-224" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Imputed estimates.** Many phospho estimates in the course DEA are imputed,</span>
+<span id="cb19-225"><a href="#cb19-225" aria-hidden="true" tabindex="-1"></a>   even for sites detected in ≥ 2/3 replicates. Excluding them is conservative,</span>
+<span id="cb19-226"><a href="#cb19-226" aria-hidden="true" tabindex="-1"></a>   but it also removed interesting candidates (e.g. Stk1/PknB T161/S162, see</span>
+<span id="cb19-227"><a href="#cb19-227" aria-hidden="true" tabindex="-1"></a>   phospho notebook) and HPr H15 only appears in Roadmap A.</span>
+<span id="cb19-228"><a href="#cb19-228" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Phosphosite signal vs occupancy.** A higher phosphosite signal can mean</span>
+<span id="cb19-229"><a href="#cb19-229" aria-hidden="true" tabindex="-1"></a>   more phosphorylation or more protein; we checked the protein level only for</span>
+<span id="cb19-230"><a href="#cb19-230" aria-hidden="true" tabindex="-1"></a>   the changed sites (5.3).</span>
+<span id="cb19-231"><a href="#cb19-231" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**STYH search and site localisation:** histidine sites and closely spaced</span>
+<span id="cb19-232"><a href="#cb19-232" aria-hidden="true" tabindex="-1"></a>   sites on the same peptide are uncertain.</span>
+<span id="cb19-233"><a href="#cb19-233" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**From the proteome notebook:** 15 min vs ~15 h also differs in medium and</span>
+<span id="cb19-234"><a href="#cb19-234" aria-hidden="true" tabindex="-1"></a>   growth state; n = 3; thresholds determine the counts; groups measured as blocks</span>
+<span id="cb19-235"><a href="#cb19-235" aria-hidden="true" tabindex="-1"></a>   (run order); pulse samples possibly prepared separately.</span>
+<span id="cb19-236"><a href="#cb19-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-237"><a href="#cb19-237" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Conclusion and next steps</span></span>
+<span id="cb19-238"><a href="#cb19-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-239"><a href="#cb19-239" aria-hidden="true" tabindex="-1"></a>*Draft:* We hypothesised that after 15 min of PASN exposure a larger fraction of</span>
+<span id="cb19-240"><a href="#cb19-240" aria-hidden="true" tabindex="-1"></a>reliably measured phosphosites than proteins changes (H1). Our data do **not**</span>
+<span id="cb19-241"><a href="#cb19-241" aria-hidden="true" tabindex="-1"></a>support H1: after 15 min, 2.3 % of phosphosites (3/131) and 1.7 % of proteins</span>
+<span id="cb19-242"><a href="#cb19-242" aria-hidden="true" tabindex="-1"></a>(35/2003) changed, a difference that is not significant (p ≈ 0.42). Both layers</span>
+<span id="cb19-243"><a href="#cb19-243" aria-hidden="true" tabindex="-1"></a>responded little after 15 min and much more after ~15 h. A few early</span>
+<span id="cb19-244"><a href="#cb19-244" aria-hidden="true" tabindex="-1"></a>phosphorylation changes occurred without a change in protein amount</span>
+<span id="cb19-245"><a href="#cb19-245" aria-hidden="true" tabindex="-1"></a>(e.g. 5&#39;-nucleotidase S33), but given the low phospho coverage we cannot</span>
+<span id="cb19-246"><a href="#cb19-246" aria-hidden="true" tabindex="-1"></a>conclude that the phospho layer reacts first.</span>
+<span id="cb19-247"><a href="#cb19-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-248"><a href="#cb19-248" aria-hidden="true" tabindex="-1"></a>*Next steps:* deeper phospho coverage (more replicates, more enrichment input);</span>
+<span id="cb19-249"><a href="#cb19-249" aria-hidden="true" tabindex="-1"></a>validate early candidates (5&#39;-nucleotidase S33, Stk1 T161/S162, HPr H15) in the</span>
+<span id="cb19-250"><a href="#cb19-250" aria-hidden="true" tabindex="-1"></a><span class="in">`stk`</span>/<span class="in">`stp`</span> mutants; time course with intermediate time points.</span>
+<span id="cb19-251"><a href="#cb19-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-252"><a href="#cb19-252" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Sources</span></span>
+<span id="cb19-253"><a href="#cb19-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-254"><a href="#cb19-254" aria-hidden="true" tabindex="-1"></a>*Combine the sources sections of both notebooks here (papers, UniProt IDs,</span>
+<span id="cb19-255"><a href="#cb19-255" aria-hidden="true" tabindex="-1"></a>course data, AI use).*</span>
+<span id="cb19-256"><a href="#cb19-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-257"><a href="#cb19-257" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Additional analysis: relaxing the 2/3 replicate filter (Michelle)</span></span>
+<span id="cb19-258"><a href="#cb19-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-259"><a href="#cb19-259" aria-hidden="true" tabindex="-1"></a>Based on Michelle&#39;s notebook</span>
+<span id="cb19-260"><a href="#cb19-260" aria-hidden="true" tabindex="-1"></a><span class="in">`../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`</span> (sections 6–9).</span>
+<span id="cb19-261"><a href="#cb19-261" aria-hidden="true" tabindex="-1"></a>Question: **do we miss interesting phosphosites because of the ≥ 2/3 replicate</span>
+<span id="cb19-262"><a href="#cb19-262" aria-hidden="true" tabindex="-1"></a>rule?** This part is **exploratory**: it does not change the main numbers or the</span>
+<span id="cb19-263"><a href="#cb19-263" aria-hidden="true" tabindex="-1"></a>Fisher test above.</span>
+<span id="cb19-264"><a href="#cb19-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-265"><a href="#cb19-265" aria-hidden="true" tabindex="-1"></a><span class="fu">### 9.1 Does the main result depend on the 2/3 filter?</span></span>
+<span id="cb19-266"><a href="#cb19-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-267"><a href="#cb19-267" aria-hidden="true" tabindex="-1"></a>Same course DEA, observed estimates only, 15 min contrast, with and without the</span>
+<span id="cb19-268"><a href="#cb19-268" aria-hidden="true" tabindex="-1"></a>replicate filter.</span>
+<span id="cb19-269"><a href="#cb19-269" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-270"><a href="#cb19-270" aria-hidden="true" tabindex="-1"></a><span class="in">```{r filter-comparison}</span></span>
+<span id="cb19-271"><a href="#cb19-271" aria-hidden="true" tabindex="-1"></a>phos <span class="sc">|&gt;</span></span>
+<span id="cb19-272"><a href="#cb19-272" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>,</span>
+<span id="cb19-273"><a href="#cb19-273" aria-hidden="true" tabindex="-1"></a>         estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>, <span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff)) <span class="sc">|&gt;</span></span>
+<span id="cb19-274"><a href="#cb19-274" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">valid_without_filter       =</span> <span class="fu">n</span>(),</span>
+<span id="cb19-275"><a href="#cb19-275" aria-hidden="true" tabindex="-1"></a>            <span class="at">significant_without_filter =</span> <span class="fu">sum</span>(changed),</span>
+<span id="cb19-276"><a href="#cb19-276" aria-hidden="true" tabindex="-1"></a>            <span class="at">valid_with_filter          =</span> <span class="fu">sum</span>(reliable),</span>
+<span id="cb19-277"><a href="#cb19-277" aria-hidden="true" tabindex="-1"></a>            <span class="at">significant_with_filter    =</span> <span class="fu">sum</span>(reliable <span class="sc">&amp;</span> changed))</span>
+<span id="cb19-278"><a href="#cb19-278" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-279"><a href="#cb19-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-280"><a href="#cb19-280" aria-hidden="true" tabindex="-1"></a>Without the filter, more sites can be tested (170 instead of 131), but the number</span>
+<span id="cb19-281"><a href="#cb19-281" aria-hidden="true" tabindex="-1"></a>of significant sites stays at **3**. The main result is robust to the filter.</span>
+<span id="cb19-282"><a href="#cb19-282" aria-hidden="true" tabindex="-1"></a>(Michelle&#39;s notebook reports 122 instead of 131 sites with the filter, because</span>
+<span id="cb19-283"><a href="#cb19-283" aria-hidden="true" tabindex="-1"></a>she counted replicates in the FragPipe site table, <span class="in">`read_sites()`</span>; here we count</span>
+<span id="cb19-284"><a href="#cb19-284" aria-hidden="true" tabindex="-1"></a>them in <span class="in">`read_abundances()`</span>, like for the proteins.)</span>
+<span id="cb19-285"><a href="#cb19-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-286"><a href="#cb19-286" aria-hidden="true" tabindex="-1"></a><span class="fu">### 9.2 Detection patterns: presence / absence without any filter</span></span>
+<span id="cb19-287"><a href="#cb19-287" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-288"><a href="#cb19-288" aria-hidden="true" tabindex="-1"></a>For every phosphosite (wild type): in how many of the 3 TSB replicates and of</span>
+<span id="cb19-289"><a href="#cb19-289" aria-hidden="true" tabindex="-1"></a>the 3 SNpulse replicates was the **phosphorylated peptide** detected? This</span>
+<span id="cb19-290"><a href="#cb19-290" aria-hidden="true" tabindex="-1"></a>includes sites seen in only 1 of 3 replicates. Not detected ≠ not</span>
+<span id="cb19-291"><a href="#cb19-291" aria-hidden="true" tabindex="-1"></a>phosphorylated: the peptide may just be below the detection limit.</span>
+<span id="cb19-292"><a href="#cb19-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-293"><a href="#cb19-293" aria-hidden="true" tabindex="-1"></a><span class="in">```{r detection-patterns}</span></span>
+<span id="cb19-294"><a href="#cb19-294" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="ot">&lt;-</span> <span class="fu">read_sites</span>(<span class="st">&quot;STYH&quot;</span>)</span>
+<span id="cb19-295"><a href="#cb19-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-296"><a href="#cb19-296" aria-hidden="true" tabindex="-1"></a>site_detection <span class="ot">&lt;-</span> sites_raw <span class="sc">|&gt;</span></span>
+<span id="cb19-297"><a href="#cb19-297" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb19-298"><a href="#cb19-298" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_id, protein_key, locus_tag, product, residue, position, medium) <span class="sc">|&gt;</span></span>
+<span id="cb19-299"><a href="#cb19-299" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_detected =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-300"><a href="#cb19-300" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n_detected, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
+<span id="cb19-301"><a href="#cb19-301" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-302"><a href="#cb19-302" aria-hidden="true" tabindex="-1"></a><span class="co"># all combinations (0-3 in TSB x 0-3 in SNpulse)</span></span>
+<span id="cb19-303"><a href="#cb19-303" aria-hidden="true" tabindex="-1"></a>site_detection <span class="sc">|&gt;</span> <span class="fu">count</span>(TSB, SNpulse, <span class="at">name =</span> <span class="st">&quot;n_sites&quot;</span>)</span>
+<span id="cb19-304"><a href="#cb19-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-305"><a href="#cb19-305" aria-hidden="true" tabindex="-1"></a><span class="co"># both directions: lost after the pulse vs gained after the pulse</span></span>
+<span id="cb19-306"><a href="#cb19-306" aria-hidden="true" tabindex="-1"></a>site_detection <span class="sc">|&gt;</span></span>
+<span id="cb19-307"><a href="#cb19-307" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">detected_in_TSB     =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb19-308"><a href="#cb19-308" aria-hidden="true" tabindex="-1"></a>            <span class="at">detected_in_SNpulse =</span> <span class="fu">sum</span>(SNpulse <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb19-309"><a href="#cb19-309" aria-hidden="true" tabindex="-1"></a>            <span class="at">TSB_only            =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb19-310"><a href="#cb19-310" aria-hidden="true" tabindex="-1"></a>            <span class="at">SNpulse_only        =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb19-311"><a href="#cb19-311" aria-hidden="true" tabindex="-1"></a>            <span class="at">TSB_only_3of3       =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">3</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb19-312"><a href="#cb19-312" aria-hidden="true" tabindex="-1"></a>            <span class="at">SNpulse_only_3of3   =</span> <span class="fu">sum</span>(TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">3</span>),</span>
+<span id="cb19-313"><a href="#cb19-313" aria-hidden="true" tabindex="-1"></a>            <span class="at">reliable_both       =</span> <span class="fu">sum</span>(TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>))</span>
+<span id="cb19-314"><a href="#cb19-314" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-315"><a href="#cb19-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-316"><a href="#cb19-316" aria-hidden="true" tabindex="-1"></a>Most &quot;only in one condition&quot; sites were seen in **1 of 3** replicates only</span>
+<span id="cb19-317"><a href="#cb19-317" aria-hidden="true" tabindex="-1"></a>(335 of 366 SNpulse-only sites, 625 of 814 TSB-only sites). Single detections</span>
+<span id="cb19-318"><a href="#cb19-318" aria-hidden="true" tabindex="-1"></a>near the detection limit are weak evidence. There are also many more TSB-only</span>
+<span id="cb19-319"><a href="#cb19-319" aria-hidden="true" tabindex="-1"></a>than SNpulse-only sites, which could be dephosphorylation, **or** simply a</span>
+<span id="cb19-320"><a href="#cb19-320" aria-hidden="true" tabindex="-1"></a>deeper measurement of the TSB samples (next section).</span>
+<span id="cb19-321"><a href="#cb19-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-322"><a href="#cb19-322" aria-hidden="true" tabindex="-1"></a><span class="fu">### 9.3 Detection depth per sample</span></span>
+<span id="cb19-323"><a href="#cb19-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-324"><a href="#cb19-324" aria-hidden="true" tabindex="-1"></a><span class="in">```{r detection-depth}</span></span>
+<span id="cb19-325"><a href="#cb19-325" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="sc">|&gt;</span></span>
+<span id="cb19-326"><a href="#cb19-326" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-327"><a href="#cb19-327" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(sample, medium) <span class="sc">|&gt;</span></span>
+<span id="cb19-328"><a href="#cb19-328" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_sites =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-329"><a href="#cb19-329" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(sample, n_sites, <span class="at">fill =</span> medium)) <span class="sc">+</span></span>
+<span id="cb19-330"><a href="#cb19-330" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb19-331"><a href="#cb19-331" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb19-332"><a href="#cb19-332" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;number of detected phosphosites&quot;</span>,</span>
+<span id="cb19-333"><a href="#cb19-333" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Detection depth per sample (wild type, STYH)&quot;</span>)</span>
+<span id="cb19-334"><a href="#cb19-334" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-335"><a href="#cb19-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-336"><a href="#cb19-336" aria-hidden="true" tabindex="-1"></a>*Interpretation:* if one sample detects many more sites than its replicates</span>
+<span id="cb19-337"><a href="#cb19-337" aria-hidden="true" tabindex="-1"></a>(e.g. <span class="in">`JE2anc_TSB_1`</span>), many &quot;TSB-only, 1/3&quot; sites come from that single deep</span>
+<span id="cb19-338"><a href="#cb19-338" aria-hidden="true" tabindex="-1"></a>sample and are not biological changes.</span>
+<span id="cb19-339"><a href="#cb19-339" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-340"><a href="#cb19-340" aria-hidden="true" tabindex="-1"></a><span class="fu">### 9.4 Strongest presence/absence candidates (3/3 vs 0/3)</span></span>
+<span id="cb19-341"><a href="#cb19-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-342"><a href="#cb19-342" aria-hidden="true" tabindex="-1"></a>Only sites detected in **all 3** replicates of one condition and **none** of the</span>
+<span id="cb19-343"><a href="#cb19-343" aria-hidden="true" tabindex="-1"></a>other. For each, we check whether its **protein** changed in the total proteome</span>
+<span id="cb19-344"><a href="#cb19-344" aria-hidden="true" tabindex="-1"></a>(if yes, the site may simply follow the protein amount, like IsaA in 5.3).</span>
+<span id="cb19-345"><a href="#cb19-345" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-346"><a href="#cb19-346" aria-hidden="true" tabindex="-1"></a><span class="in">```{r on-off-sites}</span></span>
+<span id="cb19-347"><a href="#cb19-347" aria-hidden="true" tabindex="-1"></a>prot_pulse <span class="ot">&lt;-</span> prot <span class="sc">|&gt;</span></span>
+<span id="cb19-348"><a href="#cb19-348" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">==</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-349"><a href="#cb19-349" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(protein_key, <span class="at">diff_protein =</span> diff,</span>
+<span id="cb19-350"><a href="#cb19-350" aria-hidden="true" tabindex="-1"></a>         <span class="at">protein_reliable =</span> reliable, <span class="at">protein_changed =</span> changed)</span>
+<span id="cb19-351"><a href="#cb19-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-352"><a href="#cb19-352" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="ot">&lt;-</span> site_detection <span class="sc">|&gt;</span></span>
+<span id="cb19-353"><a href="#cb19-353" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>((TSB <span class="sc">==</span> <span class="dv">3</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|</span> (TSB <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> SNpulse <span class="sc">==</span> <span class="dv">3</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb19-354"><a href="#cb19-354" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pattern =</span> <span class="fu">if_else</span>(TSB <span class="sc">==</span> <span class="dv">3</span>, <span class="st">&quot;only in TSB (lost after pulse)&quot;</span>,</span>
+<span id="cb19-355"><a href="#cb19-355" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">&quot;only after pulse (gained)&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb19-356"><a href="#cb19-356" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(prot_pulse, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-357"><a href="#cb19-357" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(pattern, locus_tag, position)</span>
+<span id="cb19-358"><a href="#cb19-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-359"><a href="#cb19-359" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="sc">|&gt;</span> <span class="fu">count</span>(pattern)</span>
+<span id="cb19-360"><a href="#cb19-360" aria-hidden="true" tabindex="-1"></a>on_off_sites <span class="sc">|&gt;</span></span>
+<span id="cb19-361"><a href="#cb19-361" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(pattern, locus_tag, product, residue, position,</span>
+<span id="cb19-362"><a href="#cb19-362" aria-hidden="true" tabindex="-1"></a>         diff_protein, protein_reliable, protein_changed)</span>
+<span id="cb19-363"><a href="#cb19-363" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-364"><a href="#cb19-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-365"><a href="#cb19-365" aria-hidden="true" tabindex="-1"></a>*These are candidates, not confirmed changes. Before using one in the report:</span>
+<span id="cb19-366"><a href="#cb19-366" aria-hidden="true" tabindex="-1"></a>plot its raw values, check the depth of the samples (9.3), and check whether</span>
+<span id="cb19-367"><a href="#cb19-367" aria-hidden="true" tabindex="-1"></a>the protein itself changed.*</span>
+<span id="cb19-368"><a href="#cb19-368" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-369"><a href="#cb19-369" aria-hidden="true" tabindex="-1"></a><span class="fu">### 9.5 Summary of the additional analysis</span></span>
+<span id="cb19-370"><a href="#cb19-370" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-371"><a href="#cb19-371" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Relaxing the 2/3 filter does not change the main result: still **3**</span>
+<span id="cb19-372"><a href="#cb19-372" aria-hidden="true" tabindex="-1"></a>  significant phosphosites after 15 min.</span>
+<span id="cb19-373"><a href="#cb19-373" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>Without any filter, many sites are seen in only one condition, but mostly in</span>
+<span id="cb19-374"><a href="#cb19-374" aria-hidden="true" tabindex="-1"></a>  just 1 of 3 replicates; part of this pattern is likely due to different</span>
+<span id="cb19-375"><a href="#cb19-375" aria-hidden="true" tabindex="-1"></a>  detection depth between samples.</span>
+<span id="cb19-376"><a href="#cb19-376" aria-hidden="true" tabindex="-1"></a><span class="ss">* </span>The 3/3 vs 0/3 sites (7 gained, 42 lost after the pulse) are the most</span>
+<span id="cb19-377"><a href="#cb19-377" aria-hidden="true" tabindex="-1"></a>  promising presence/absence candidates for follow-up.</span>
+<span id="cb19-378"><a href="#cb19-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-379"><a href="#cb19-379" aria-hidden="true" tabindex="-1"></a><span class="in">```{r session}</span></span>
+<span id="cb19-380"><a href="#cb19-380" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb19-381"><a href="#cb19-381" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
