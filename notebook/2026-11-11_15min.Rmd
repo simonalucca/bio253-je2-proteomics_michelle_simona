@@ -18,7 +18,7 @@ Split: Simona = total proteome, Michelle = phosphoproteome, then combined.
 
 **Simona – proteome**
 
-- completed `analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd` (sections 1–8)
+- completed `analyses_15min_proteome/07_15min_topic1_proteom.qmd` (sections 1–8)
 - course DEA (`dea_total`, prolfquapp, vsn) + per-sample abundances, wild type (`anc`) only
 - contrasts `TSB_vs_SNpulse_at_anc` (15 min) and `TSB_vs_SN_at_anc` (~15 h)
 - reliable = ≥ 2/3 replicates in both groups; changed = FDR < 0.05 and |log2FC| > 1
@@ -26,9 +26,9 @@ Split: Simona = total proteome, Michelle = phosphoproteome, then combined.
 
 **Michelle – phosphoproteome (STYH)**
 
-- `analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`:
+- `analyses_15min_phospho/topic1/01_explore_phospho_cleaned.qmd`:
   lecturer's Roadmap A (median normalisation, limma, sites ≥ 2/3 in both groups, FDR < 0.10)
-- `analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`:
+- `analyses_15min_phospho/topic1/02_phospho_prepared_dea.qmd`:
   same pipeline as the proteome (course DEA, FDR < 0.05, |log2FC| > 1),
   only observed (not imputed) estimates
 
@@ -38,7 +38,7 @@ Split: Simona = total proteome, Michelle = phosphoproteome, then combined.
   groups (counted from `read_abundances()`) **and** `estimate_type == "observed"`,
   FDR < 0.05, |log2FC| > 1
 - added the `observed` filter to the proteome notebook afterwards (documented in section 3)
-- new folder `analyses_15min_topic1_combined/01_combined_proteome_phospho.qmd`:
+- new folder `analyses_15min_combined/01_combined_proteome_phospho.qmd`:
   fractions of both layers, bar plot, Fisher's exact test, overlap of changed
   phosphosites with their protein, raw values of early sites
 

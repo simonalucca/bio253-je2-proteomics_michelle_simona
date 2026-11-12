@@ -5,9 +5,9 @@ subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · combined an
 
 Combined analysis of the two separate notebooks:
 
-* **Proteome (Simona):** `../analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd`
-* **Phosphoproteome (Michelle):** `../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`
-  (Roadmap A as sensitivity analysis: `../analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`)
+* **Proteome (Simona):** `../analyses_15min_proteome/07_15min_topic1_proteom.qmd`
+* **Phosphoproteome (Michelle):** `../analyses_15min_phospho/topic1/02_phospho_prepared_dea.qmd`
+  (Roadmap A as sensitivity analysis: `../analyses_15min_phospho/topic1/01_explore_phospho_cleaned.qmd`)
 
 This notebook recomputes both layers with **one shared function**, so that the
 definitions are guaranteed to be identical. Details, raw-value plots and
@@ -257,7 +257,7 @@ course data, AI use).*
 ## 9. Additional analysis: relaxing the 2/3 replicate filter (Michelle)
 
 Based on Michelle's notebook
-`../analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd` (sections 6–9).
+`../analyses_15min_phospho/topic1/02_phospho_prepared_dea.qmd` (sections 6–9).
 Question: **do we miss interesting phosphosites because of the ≥ 2/3 replicate
 rule?** This part is **exploratory**: it does not change the main numbers or the
 Fisher test above.
