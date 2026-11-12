@@ -3,3 +3,86 @@ title: "notebook_11_11_26_15min_group"
 output: html_document
 ---
 
+
+# 2026-11-11 – group 15min (Simona, Michelle)
+
+## Question for today
+Topic 1: Does *S. aureus* JE2 show early phosphorylation changes after 15 min of
+*P. aeruginosa* supernatant (PASN), before major changes in protein abundance?
+Hypothesis: after 15 min, a larger fraction of reliably measured phosphosites
+than proteins changes.
+
+Split: Simona = total proteome, Michelle = phosphoproteome, then combined.
+
+## What we did
+
+**Simona – proteome**
+
+- completed `analyses_15min_topic1_proteome/07_15min_topic1_proteom.qmd` (sections 1–8)
+- course DEA (`dea_total`, prolfquapp, vsn) + per-sample abundances, wild type (`anc`) only
+- contrasts `TSB_vs_SNpulse_at_anc` (15 min) and `TSB_vs_SN_at_anc` (~15 h)
+- reliable = ≥ 2/3 replicates in both groups; changed = FDR < 0.05 and |log2FC| > 1
+- fractions, up/down counts, volcano plots, raw-value plots of the top 6 hits
+
+**Michelle – phosphoproteome (STYH)**
+
+- `analyses_15min_topic1_phospho/topic1/01_explore_phospho_cleaned.qmd`:
+  lecturer's Roadmap A (median normalisation, limma, sites ≥ 2/3 in both groups, FDR < 0.10)
+- `analyses_15min_topic1_phospho/topic1/02_phospho_prepared_dea.qmd`:
+  same pipeline as the proteome (course DEA, FDR < 0.05, |log2FC| > 1),
+  only observed (not imputed) estimates
+
+**Together – aligning and combining**
+
+- agreed on one shared rule for both layers: course DEA, ≥ 2/3 replicates in both
+  groups (counted from `read_abundances()`) **and** `estimate_type == "observed"`,
+  FDR < 0.05, |log2FC| > 1
+- added the `observed` filter to the proteome notebook afterwards (documented in section 3)
+- new folder `analyses_15min_topic1_combined/01_combined_proteome_phospho.qmd`:
+  fractions of both layers, bar plot, Fisher's exact test, overlap of changed
+  phosphosites with their protein, raw values of early sites
+
+## Results (key numbers)
+
+| shared rule | 15 min | ~15 h |
+|---|---|---|
+| proteins | 35/2003 = 1.7 % | 375/1979 = 18.9 % |
+| phosphosites (STYH) | 3/131 = 2.3 % | 17/144 = 11.8 % |
+
+- proteome 15 min: 27 up, 8 down in PASN; ~15 h: 135 up, 240 down
+- top proteome hit: AdhE (B7H15_00850), TSB_vs_SNpulse_at_anc: diff = -4.19,
+  FDR = 4e-14 -> ~18x higher in PASN; several top hits are fermentation enzymes
+  (AdhE, Ldh, Adh, anaerobic ribonucleotide reductase)
+- phospho vs protein at 15 min: one-sided Fisher's exact test p ≈ 0.42
+  -> **H1 not supported**; both layers change little after 15 min
+- early phosphosites: 5'-nucleotidase S33 (up) and B7H15_05655 T21 (down) changed
+  without a change in protein amount; IsaA S194 mostly explained by more IsaA protein
+- Roadmap A (sensitivity): 15 min 2/200 = 1.0 %, ~15 h 102/311 = 32.8 %;
+  early hits incl. HPr H15 (phosphocarrier protein, ~23x up, protein unchanged)
+
+## Problems / surprises
+
+- phospho coverage is low: only ~130–200 reliable sites vs ~2000 proteins -> little power
+- the phospho result depends on the pipeline (Roadmap A vs course DEA, with/without
+  `observed` filter), especially at ~15 h (11.8 % vs 32.8 %)
+- many phospho DEA estimates are imputed even for sites seen in ≥ 2/3 replicates;
+  the `observed` filter removes e.g. Stk1/PknB T161/S162
+- 15 min vs ~15 h also differs in medium/growth state, not only time
+- anc groups measured as blocks (not randomised); pulse samples named differently
+  in the Excel file ("2anc_pulseSN_...") -> ask lecturer
+- Michelle's replicate count uses `read_sites()` (3/122) vs `read_abundances()`
+  in the combined notebook (3/131) -> to be aligned
+
+## AI use
+
+Claude (Anthropic): explained data structure, contrast direction, normalisation,
+pipelines and plots; drafted R code and text for the proteome notebook and the
+combined notebook; checked numbers independently and compared the two pipelines.
+We ran all code ourselves, checked the contrast direction with `explain_contrast()`,
+compared results with raw-value plots and revised the text.
+
+## Next
+
+- decide what goes into `reports/` and prepare the slides
+- discuss tomorrow what was done good and what could be improved
+- move on with topic 2
