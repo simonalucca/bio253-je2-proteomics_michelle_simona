@@ -1,0 +1,125 @@
+---
+title: "notebook_12_11_26_15min_group"
+output: html_document
+---
+
+
+# 2026-11-12 – group 15min (Simona, Michelle)
+
+## Question for today
+
+1. Understand and interpret yesterday's combined results (Fisher test, changed
+   phosphosites vs their protein, raw values).
+2. Simona: *which* proteins change after the 15 min PASN pulse, what are their
+   functions, and do the changes persist at ~15 h? (new notebook 08)
+3. Michelle: do we miss phosphosites because of the ≥ 2/3 replicate rule?
+
+## What we did
+
+**Interpretation of the combined notebook** (`analyses_15min_combined/01_combined_proteome_phospho.qmd`)
+
+- went through the course DEA tables (prolfquapp, vsn), what "imputed at the
+  limit of detection" (`lod_imputed`) means, and why so many phospho estimates are imputed
+- interpreted the Fisher test (5.2), the overlap of changed sites with their
+  protein (5.3) and the raw values of the 3 early sites (5.4)
+- checked the replicates of the two "real" phosphorylation changes in the per-sample data
+
+**Simona – proteome, new notebook** `analyses_15min_proteome/08_15min_changed_proteins.qmd`
+
+- structured like the course template (question, hypothesis, data, methods,
+  results, caveats, conclusion, sources); same reliable/changed rules as notebook 07
+- results sections: 5.1 raw values of the top 6, 5.2 list of the 35 changed
+  proteins (saved as `reports/15min_changed_proteins_anc.csv`), 5.3 functional
+  groups, 5.4 15 min vs ~15 h, 5.5 on/off proteins, 5.6 phosphosites on these proteins
+- mutant comparison (stk/stp) removed for now, maybe later
+- ran sections 5.1 and 5.2
+
+**Michelle – phospho** `analyses_15min_phospho/topic1/02_phospho_prepared_dea.qmd`, sections 6–9
+
+- compared the course DEA with and without the 2/3 replicate filter
+- presence/absence of every site in TSB vs SNpulse, incl. sites seen in only 1 of 3 replicates
+
+**Together**
+
+- added Michelle's analysis to the combined notebook as **section 9**
+  (9.1 with/without filter, 9.2 detection patterns in both directions,
+  9.3 detection depth per sample, 9.4 3/3 vs 0/3 candidates with protein check;
+  9.3 and 9.4 added with AI help)
+- searched literature for a 15 min pulse study
+- organisation: renamed folders (`analyses_15min_combined`, `_phospho`, `_proteome`,
+  without "topic1"), new folder `analyses_15min_phospho/topic2/`, fixed a rejected
+  git push and updated the remote to the renamed GitHub repository
+
+## Results (key numbers)
+
+**Combined (15 min, wild type)**
+
+- Fisher test phospho vs protein: 3/131 (2.3 %) vs 35/2003 (1.7 %), OR = 1.32,
+  p = 0.42 (one-sided) -> not significant; low power (only 3 changed sites)
+- the 3 changed sites (`TSB_vs_SNpulse_at_anc`; diff < 0 = higher after PASN):
+  - B7H15_05655 T21 (hypothetical protein): diff = +2.43 (~5x **lower** after PASN),
+    protein unchanged (-0.31) -> real dephosphorylation; transient (back at ~15 h)
+  - B7H15_01690 S33 (5'-nucleotidase, lipoprotein): diff = -2.42 (~5x **higher**
+    after PASN), protein unchanged (+0.11) -> real phosphorylation; stays high at ~15 h
+  - IsaA S194: diff = -2.80, but protein also -1.87 (FDR 7e-8) -> mostly more protein;
+    only 2/3 replicates in TSB and SN
+- T21 and S33 were detected in **3/3 replicates in every medium** (no imputation)
+
+**Proteome (notebook 08)**
+
+- 35 changed proteins at 15 min: 27 higher, 8 lower after PASN
+- top 6 by smallest FDR (notebook 07) ≠ top 6 by largest |log2FC| (notebook 08);
+  only AdhE (B7H15_00850) and anaerobic ribonucleotide reductase (B7H15_14555) are in both
+- largest changes also include a cold-shock protein (B7H15_15050, up at 15 min,
+  below TSB at ~15 h), sulfurtransferase (B7H15_14960) and delta-hemolysin
+  (B7H15_11280, **lower** after PASN, further down at ~15 h)
+- AraC family regulator (B7H15_03730): large change but noisy (2/3 in TSB, wide spread)
+
+**Phospho without the 2/3 filter (Michelle, combined section 9)**
+
+- 15 min: 170 testable sites without the filter vs 131 with it -> still **3** significant
+- sites only after the pulse: 366 (335 in 1/3, 24 in 2/3, 7 in 3/3)
+- sites only in TSB: 814 (625 in 1/3, 147 in 2/3, 42 in 3/3)
+- detected sites per sample: JE2anc_TSB_1 = 977, all other TSB/pulse samples 347–484
+  -> the many TSB-only sites are probably partly a depth effect of one sample
+
+**Literature**
+
+- no paper found on a 15 min PASN pulse (proteome or phosphoproteome)
+- Schwyter et al. 2025 (mSystems, doi:10.1128/msystems.00262-25): JE2 18 h in 30 % PA
+  supernatant, 335 changed proteins (≈ 19 %); virulence factors and transporters down,
+  ROS scavengers up -> reference for our ~15 h
+- Huemer et al. 2023 (Sci. Signal., doi:10.1126/scisignal.abj8194): most changes only
+  in the phosphoproteome, not the total proteome (pH stress, stp/pknB mutants)
+- Filkins et al. 2015 (J. Bacteriol., doi:10.1128/JB.00059-15): co-culture with
+  *P. aeruginosa* drives *S. aureus* towards fermentation (HQNO) -> fits our early
+  fermentation enzymes, but co-culture and mRNA, not supernatant and protein
+
+## Problems / surprises
+
+- replicate counts differ between notebooks: Michelle 122 reliable sites
+  (`read_sites()`), combined 131 (`read_abundances()`) -> use one source
+- one deep TSB sample (TSB_1) makes presence/absence counts unbalanced
+- "top 6" depends on how you sort (FDR vs fold change) -> state it in Methods
+- product names (NCBI automatic annotation) are often vague -> functions must be
+  checked in UniProt via the NCTC 8325 ortholog (`staa8_uniprot`)
+- git push was rejected ("non-fast-forward"); commits stayed local until we pulled
+  and pushed again from the terminal; the GitHub repository had been renamed
+
+## AI use
+
+Claude (Anthropic): explained DEA tables, imputation, the Fisher test, the
+detection table, NCBI/UniProt and the FASTA annotation; drafted notebook 08 and
+section 9 of the combined notebook; checked numbers independently on the data;
+searched for literature; helped with the git problem and the folder renaming.
+We ran the code ourselves and checked the outputs against the raw-value plots.
+Notebook 08 sections 5.3–5.6 and combined section 9 still have to be run and checked by us.
+
+## Next steps
+
+- notebook 08: run 5.3–5.6; correct the functional groups with UniProt
+  (ID mapping of the 35 `staa8_uniprot` IDs); fill in caveats, conclusion, sources
+- align the replicate-count source for phosphosites (Michelle / combined)
+- check the 3/3 vs 0/3 phosphosites (raw values, depth, protein level)
+- Michelle: start topic 2 (`analyses_15min_phospho/topic2/`)
+- always pull before working, push after committing
