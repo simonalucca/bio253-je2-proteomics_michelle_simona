@@ -115,9 +115,13 @@ plot_protein(top6, filter(ab, genotype == "anc"))
 ```{r early-list}
 early |> select(-protein_key)
 early |> count(direction)
-```
-Q2G1K9: Aldehyde-alcohol dehydrogenase, has catalytic activity in fermentation of pyruvate to ethanol
 
+knitr::include_graphics(file.path(REPO_ROOT, "reports", "string_evidence_network_34_nodes.svg"))
+```
+We get Protein ID for 34 out of 35 proteins -> look at this proteins in UniProt and String
+
+Q2G1K9: Aldehyde-alcohol dehydrogenase, has catalytic activity in fermentation of pyruvate to ethanol
+Q2FV02: Anaerobic ribonucleoside-triphosphate reductase, putative: It makes DNA building blocks. It turns ribonucleoside triphosphates (ATP, GTP, CTP, UTP) into deoxyribonucleotides (dATP, dGTP and so on). The cell needs these to replicate and repair its DNA. It only works without oxygen
 
 ```{r save-list}
 # A result table (not raw data): may go to GitHub; Michelle can join it with her sites
@@ -239,3 +243,191 @@ tools used – with what for, and what you checked yourself.*
 ```{r session}
 sessionInfo()
 ```
+
+## 9. Summary: functions of the early-changed proteins and link to the literature
+
+After 15 min of *P. aeruginosa* supernatant (PASN), 34 *S. aureus* JE2 proteins change:
+**27 go up and 7 go down**. The strongest signal is a switch to **fermentation and
+anaerobic metabolism**, while **toxins (delta-hemolysin) go down**.
+
+* **Data:** wild type (anc), contrast `TSB_vs_SNpulse_at_anc`, changed = FDR < 0.05 and
+  |log2FC| > 1 (`reports/15min_changed_proteins_anc.csv`).
+* **35th hit:** `zz_Y-FGCZCont00173_` is an FGCZ lab contaminant, not an *S. aureus*
+  protein. It should be removed, so the real count is 34.
+* **Fold changes** below are linear fold changes (2^|log2FC|).
+* **Pattern:** the up-regulated proteins look like a response to blocked respiration,
+  oxidative stress and cell-wall stress, consistent with HQNO, pyocyanin and cyanide in
+  PASN. The down-regulated proteins include *agr*-controlled toxins.
+* Functions are taken from the JE2 genome annotation (NCBI) and from the STRING v12
+  descriptions of the NCTC 8325 orthologs, and still have to be confirmed in
+  UniProt / AureoWiki. 17 of the 34 proteins are called "Conserved hypothetical protein"
+  in STRING; section 9.3 shows how well characterised each of them really is.
+
+### 9.1 Upregulated after PASN (27 proteins)
+
+#### Fermentation and anaerobic metabolism (6)
+
+When respiration is blocked, *S. aureus* regenerates NAD+ by fermenting pyruvate to
+lactate, ethanol and formate instead of using the electron transport chain.
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| Bifunctional acetaldehyde-CoA/alcohol dehydrogenase (AdhE) | Q2G1K9 | 18.2 | Acetyl-CoA → acetaldehyde → ethanol; key NAD+ regeneration step of fermentation |
+| Anaerobic ribonucleoside-triphosphate reductase (NrdD) | Q2FV02 | 7.7 | Makes DNA building blocks (dNTPs) without oxygen; glycyl-radical enzyme |
+| Pyruvate formate-lyase-activating enzyme (PflA) | Q2G1D7 | 5.2 | Activates pyruvate formate-lyase (pyruvate → acetyl-CoA + formate), the anaerobic route out of pyruvate |
+| L-lactate dehydrogenase (Ldh1) | Q2G218 | 4.6 | Pyruvate → lactate; Ldh1 is induced by NO and respiratory stress |
+| NrdD-activating protein (NrdG) | Q2FV03 | 3.7 | Radical SAM enzyme that switches on NrdD; same operon |
+| Zinc-dependent alcohol dehydrogenase (Adh) | Q2G0G1 | 3.3 | Acetaldehyde ↔ ethanol, NAD+ regeneration |
+
+These six form the largest connected cluster in the STRING network
+
+
+#### Cell wall and cell division (4)
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| Transglycosylase SceD | Q2FWF8 | 4.9 | Peptidoglycan remodelling, cell separation; induced by cell-wall stress |
+| Glycyl-glycine endopeptidase LytM | O33599 | 4.3 | Cuts pentaglycine bridges in peptidoglycan (autolysin) |
+| Transglycosylase IsaA | Q2FV52 | 3.7 | Peptidoglycan hydrolase, "immunodominant staphylococcal antigen A" |
+| Cell division protein SepF | Q2FZ86 | 2.3 | Anchors the FtsZ ring to the membrane during division |
+
+SceD, LytM and IsaA are co-regulated autolysins (WalKR regulon), suggesting cell-envelope
+remodelling or stress.
+
+#### Stress response and regulation (6)
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| AraC family transcriptional regulator | Q2G0D2 | 6.1 | Transcription regulator, target unknown; weakest FDR (0.016) |
+| Sulfurtransferase (TrhO) | Q2FUS7 | 5.6 | tRNA uridine hydroxylation; rhodanese family members can detoxify cyanide |
+| Cold-shock protein | Q2FUQ9 | 5.3 | RNA chaperone (CspA-like); in *S. aureus* also linked to stress and pigment regulation |
+| Cold-shock protein | Q2G009 | 2.4 | Second Csp paralog |
+| DNA-directed RNA polymerase subunit delta (RpoE) | Q2FWD0 | 2.6 | Small RNAP subunit that improves promoter specificity |
+| Peroxide-responsive repressor (PerR) | Q2G282 | 2.2 | Senses H2O2 and controls KatA, AhpC and iron storage; a direct sign of oxidative stress |
+
+#### Detoxification (3)
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| VOC family protein | Q2FV27 | 2.7 | Vicinal-oxygen-chelate enzyme; glyoxalase-like, detoxifies reactive carbonyls or antibiotics |
+| Glyoxalase/bleomycin resistance/dioxygenase family | Q2FY61 | 2.5 | Same fold; methylglyoxal detox or ring-cleavage |
+| VOC family protein | Q2G1U2 | 2.2 | Same fold |
+
+Methylglyoxal accumulates when glycolysis runs faster than downstream steps, which happens
+during fermentation.
+
+#### Other metabolism, transport and secretion (6)
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| Glutamyl-tRNA reductase (HemA) | Q2FXQ9 | 4.6 | First step of heme biosynthesis; heme is needed for cytochromes and catalase |
+| Type II secretion protein | Q2FV34 | 3.6 | Membrane/secretion protein, function unclear in *S. aureus* |
+| Aspartate 1-decarboxylase (PanD) | Q2FV23 | 3.0 | Pantothenate (vitamin B5) → coenzyme A synthesis |
+| Branched-chain amino acid carrier (BrnQ-like) | Q2G171 | 2.8 | Imports Ile, Leu, Val; weak FDR (0.029) |
+| Dihydroxyacetone kinase subunit DhaM | Q2G0E8 | 2.8 | PTS-dependent phosphorylation of dihydroxyacetone, feeds glycolysis |
+| EssG | Q2G178 | 2.1 | Component of the type VII secretion system (Ess); antitoxin that neutralises the toxin EssD (STRING); FDR 0.048, borderline |
+
+#### Unknown function (2)
+
+| Protein (gene) | UniProt | Fold up | Function |
+|---|---|---|---|
+| Hypothetical protein | Q2FZA8 | 3.3 | Unknown in both JE2 and STRING annotation; FDR 0.025 |
+| Hypothetical protein (SAOUHSC_01062) | Q2G2C3 | 2.4 | Unknown; STRING: UPF0358 family (uncharacterised protein family) |
+
+### 9.2 Downregulated after PASN (7 proteins)
+
+The strongest drop is delta-hemolysin (8.1-fold), which points to an early decrease in
+*agr*-controlled virulence. A second virulence-related protein, the MHC class II analog
+protein (Q2FW51), also goes down.
+
+| Protein (gene) | UniProt | Fold down | Function |
+|---|---|---|---|
+| Delta-hemolysin (Hld) | Q2FWM8 | 8.1 | Small membrane-lysing peptide toxin; encoded inside RNAIII, the effector RNA of the *agr* quorum-sensing system, so a direct read-out of *agr* activity |
+| Hypothetical protein | Q2FW65 | 2.4 | Unknown |
+| Truncated MHC class II analog protein (Map/Eap-like) | Q2FW51 | 2.3 | JE2 annotation says "toxin", but STRING describes it as a truncated MHC class II analog protein: a surface protein that binds host proteins and modulates the immune response, not a classical toxin. To be confirmed in UniProt |
+| Hypothetical protein | Q2G1V8 | 2.3 | Unknown; FDR 0.041 |
+| Isochorismatase family protein | Q2G1H1 | 2.2 | Hydrolase (amidase-like); in other bacteria involved in siderophore or nicotinamide metabolism |
+| Na+/H+ antiporter subunit E (MnhE1) | Q2G2H8 | 2.1 | Part of the Mnh1 complex that keeps pH and Na+ balance using the proton gradient; less needed when respiration drops |
+| Tautomerase | Q2G2M0 | 2.1 | Small 4-oxalocrotonate tautomerase-like enzyme; FDR 0.047, borderline |
+
+The contaminant `zz_Y-FGCZCont00173_` (2.9-fold down) is left out on purpose.
+
+### 9.3 How well characterised are these proteins?
+
+STRING (v12, NCTC 8325 orthologs) calls 17 of the 34 proteins "Conserved hypothetical
+protein". The JE2 genome annotation is newer and gives many of them a name based on a
+sequence domain or family. Comparing both annotations gives three levels:
+
+**A. "Hypothetical" in STRING, but STRING's description gives a known function (4)**
+
+| Protein | UniProt | Direction | STRING description |
+|---|---|---|---|
+| NrdG | Q2FV03 | up | Activates the anaerobic ribonucleotide reductase (radical SAM enzyme) |
+| SepF | Q2FZ86 | up | Divisome protein, recruited early to the Z-ring, cross-links FtsZ |
+| EssG | Q2G178 | up | Type VII secretion (Ess) component; antitoxin of EssD |
+| MnhE1 | Q2G2H8 | down | Part of the Mnh Na+/H+ antiporter |
+
+**B. "Hypothetical" in STRING; JE2 only gives a family or domain name (9)**
+
+These have a *predicted* activity from their sequence, but no studied role in *S. aureus*.
+
+| JE2 name | UniProt | Direction |
+|---|---|---|
+| AraC family transcriptional regulator | Q2G0D2 | up |
+| Sulfurtransferase (UPF0176 family) | Q2FUS7 | up |
+| Type II secretion protein | Q2FV34 | up |
+| Dihydroxyacetone kinase subunit DhaM | Q2G0E8 | up |
+| VOC family protein | Q2FV27 | up |
+| Glyoxalase/bleomycin resistance family protein | Q2FY61 | up |
+| VOC family protein | Q2G1U2 | up |
+| Cold-shock protein | Q2G009 | up |
+| Isochorismatase family protein | Q2G1H1 | down |
+
+**C. Hypothetical in both annotations, i.e. truly unknown (4)**
+
+Q2FZA8 (up), Q2G2C3 (up; UPF0358 family), Q2G1V8 (down), Q2FW65 (down).
+
+So about half of the early-changed proteins (17 of 34) are poorly characterised, and
+interpretations of groups B and C should be treated as hypotheses.
+
+### 9.4 Connection to the course papers
+
+The 15 min proteins fit the long-term picture from the papers (blocked respiration,
+oxidative stress, less virulence) and show that part of this response has already started
+after 15 min.
+
+What the supernatant contains: P. aeruginosa secretes HQNO and PQS, which block respiration and create reactive oxygen species (ROS). It also secretes pyocyanin, hydrogen cyanide, the LasA protease and siderophores. Schwyter et al. 2025 and Niggli et al. show that PASN inhibits S. aureus growth.
+
+| Finding (15 min) | Paper | What the paper shows | How it connects |
+|---|---|---|---|
+| Fermentation up (AdhE, Ldh1, PflA, Adh) and NrdDG up | Review "Harnessing bacterial interactions" | *P. aeruginosa* HQNO shifts *S. aureus* from respiration to fermentation; linked to small colony variants (SCVs) and antibiotic tolerance | Direct support: the shift is visible at protein level after only 15 min |
+| PerR up; cold-shock proteins, VOC/glyoxalase enzymes up | Schwyter et al. 2025 (mSystems) | After 18 h in 30% PASN, JE2 raises the ROS scavengers SodA, KatA and AhpC; HQNO and PQS generate ROS | PerR is the H2O2 sensor that controls KatA and AhpC, so this may be the start of that response. Check whether KatA, AhpC and SodA already move at 15 min |
+| Delta-hemolysin (Hld) and the MHC class II analog protein (Q2FW51) down | Schwyter et al. 2025 | Virulence factors are the main down-regulated group after 18 h (Hla, LukD, LukG, LukH ≈ 32-fold down); the toxin repressor Rot goes up | Same direction, but a smaller set. Hld comes from RNAIII, so *agr* may already be switching off |
+| MnhE1 down; BrnQ-like carrier up | Schwyter et al. 2025 | Transporters are mostly down after 18 h (26 down vs 8 up), including Na+ and peptide importers | Partly consistent; at 15 min only one transporter subunit goes down |
+| Fermentation, SCV-like state | Niggli et al. (mBio) | JE2 and other strains adapt to PASN over 30 days; SCVs appear in PASN-evolved populations; hemolysis changes during evolution | The early metabolic switch is the plastic (non-genetic) response that evolution later builds on |
+| Cell-wall hydrolases (SceD, LytM, IsaA) and SepF up | Huemer et al. 2023 (Sci Signal) | PknB/Stp phosphorylation regulates cell wall synthesis, cell division (FtsZ) and translation; stress leads to quiescence and antibiotic tolerance | Cell-wall and division proteins are typical PknB targets; check the phospho data for changed sites on them |
+| Fast changes in few proteins | Prust et al. 2021 (MCP) | *S. aureus* has more than 3800 phosphosites and few sigma factors, so much regulation happens by phosphorylation | Supports the topic-1 hypothesis: phosphorylation should react faster and more broadly than protein levels |
+| Anaerobic switch, delta-hemolysin down | CF review (*P. aeruginosa* adaptation to the CF airway) | CF lungs contain low-oxygen mucus where *P. aeruginosa* and *S. aureus* co-exist | Clinical relevance: the anaerobic, low-virulence state may help *S. aureus* persist in CF co-infection (statement still to be checked in the paper) |
+
+In short, the 15 min data show the beginning of the 18 h response described by
+Schwyter et al.: metabolism and stress sensors change first, while the large virulence
+and transporter changes probably need more time (topic 3).
+
+### 9.5 Open points
+
+* Confirm the key functions in UniProt or AureoWiki, especially Q2FW51 ("toxin" in JE2 vs
+  MHC class II analog protein in STRING), the AraC regulator and the VOC proteins
+  (group B in 9.3).
+* Borderline hits (FDR 0.016–0.048): AraC regulator, BrnQ-like carrier, Q2FZA8, EssG,
+  Q2G1V8, tautomerase.
+* An 18-fold increase of AdhE in 15 min is surprisingly large: check the raw values
+  (5.1) and whether it was near the detection limit in TSB.
+* Remove the contaminant in notebooks 07 and 08 and update the count to 34.
+* Next: are SodA, KatA, AhpC, CydA and Rot already changed at 15 min? Do the cell-wall
+  and fermentation proteins carry changed phosphosites (5.5)?
+
+**Additional references:** Huemer et al., Sci. Signal. (2023) 16, eabj8194,
+doi:10.1126/scisignal.abj8194 · Prust et al., Mol. Cell. Proteomics (2021) 20, 100034,
+doi:10.1074/mcp.RA120.002232 · Review "Harnessing bacterial interactions to manage
+infections – *P. aeruginosa* as a case example" · Review "Adaptation of *P. aeruginosa*
+to the cystic fibrosis airway – an evolutionary perspective"
