@@ -10,8 +10,8 @@ output: html_document
 
 1. Understand and interpret yesterday's combined results (Fisher test, changed
    phosphosites vs their protein, raw values).
-2. Simona: *which* proteins change after the 15 min PASN pulse, what are their
-   functions, and do the changes persist at ~15 h? (new notebook 08)
+2. Simona: *which* proteins change after the 15 min PASN pulse, and what are their
+   functions? (new notebook 08)
 3. Michelle: do we miss phosphosites because of the ≥ 2/3 replicate rule?
 
 ## What we did
@@ -30,8 +30,9 @@ output: html_document
   results, caveats, conclusion, sources); same reliable/changed rules as notebook 07
 - results sections: 5.1 raw values of the top 6, 5.2 list of the 35 changed
   proteins (saved as `reports/15min_changed_proteins_anc.csv`), 5.3 functional
-  groups, 5.4 15 min vs ~15 h, 5.5 on/off proteins, 5.6 phosphosites on these proteins
+  groups, 5.4 on/off proteins, 5.5 phosphosites on these proteins
 - mutant comparison (stk/stp) removed for now, maybe later
+- comparison 15 min vs ~15 h removed from 08: it is analysed in topic 3
 - ran sections 5.1 and 5.2
 
 **Michelle – phospho** `analyses_15min_phospho/topic1/02_phospho_prepared_dea.qmd`, sections 6–9
@@ -113,11 +114,11 @@ detection table, NCBI/UniProt and the FASTA annotation; drafted notebook 08 and
 section 9 of the combined notebook; checked numbers independently on the data;
 searched for literature; helped with the git problem and the folder renaming.
 We ran the code ourselves and checked the outputs against the raw-value plots.
-Notebook 08 sections 5.3–5.6 and combined section 9 still have to be run and checked by us.
+Notebook 08 sections 5.3–5.5 and combined section 9 still have to be run and checked by us.
 
 ## Next steps
 
-- notebook 08: run 5.3–5.6; correct the functional groups with UniProt
+- notebook 08: run 5.3–5.5; correct the functional groups with UniProt
   (ID mapping of the 35 `staa8_uniprot` IDs); fill in caveats, conclusion, sources
 - align the replicate-count source for phosphosites (Michelle / combined)
 - check the 3/3 vs 0/3 phosphosites (raw values, depth, protein level)
