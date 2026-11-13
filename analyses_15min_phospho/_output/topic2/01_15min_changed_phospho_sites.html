@@ -2220,9 +2220,8 @@ vertical-align: -.125em;
   <li><a href="#functional-interpretation-and-next-annotation-steps" id="toc-functional-interpretation-and-next-annotation-steps" class="nav-link" data-scroll-target="#functional-interpretation-and-next-annotation-steps">8. Functional interpretation and next annotation steps</a>
   <ul class="collapse">
   <li><a href="#rpoy-rna-polymerase-subunit-epsilon" id="toc-rpoy-rna-polymerase-subunit-epsilon" class="nav-link" data-scroll-target="#rpoy-rna-polymerase-subunit-epsilon">8.1 RpoY – RNA polymerase subunit epsilon</a></li>
-  <li><a href="#rpoy-dna-directed-rna-polymerase-subunit-epsilon-q2fzg8" id="toc-rpoy-dna-directed-rna-polymerase-subunit-epsilon-q2fzg8" class="nav-link" data-scroll-target="#rpoy-dna-directed-rna-polymerase-subunit-epsilon-q2fzg8">RpoY — DNA-directed RNA polymerase subunit epsilon (Q2FZG8)</a></li>
   <li><a href="#nucleotidase-lipoprotein-ep4-family-q2g170" id="toc-nucleotidase-lipoprotein-ep4-family-q2g170" class="nav-link" data-scroll-target="#nucleotidase-lipoprotein-ep4-family-q2g170">8.2 5′-Nucleotidase – lipoprotein e(P4) family (Q2G170)</a></li>
-  <li><a href="#isaa-transglycosylase-q2fv52" id="toc-isaa-transglycosylase-q2fv52" class="nav-link" data-scroll-target="#isaa-transglycosylase-q2fv52">8.3 IsaA – Transglycosylase (Q2FV52)</a></li>
+  <li><a href="#isaa-peptidoglycan-hydrolase-q2fv52" id="toc-isaa-peptidoglycan-hydrolase-q2fv52" class="nav-link" data-scroll-target="#isaa-peptidoglycan-hydrolase-q2fv52">8.3 IsaA – Peptidoglycan hydrolase (Q2FV52)</a></li>
   <li><a href="#comparison-of-biological-processes" id="toc-comparison-of-biological-processes" class="nav-link" data-scroll-target="#comparison-of-biological-processes">8.4 Comparison of biological processes</a></li>
   </ul></li>
   <li><a href="#interim-conclusion" id="toc-interim-conclusion" class="nav-link" data-scroll-target="#interim-conclusion">9. Interim conclusion</a></li>
@@ -2751,7 +2750,7 @@ vertical-align: middle;
 </section>
 <section id="data-contrast-and-statistical-criteria" class="level2">
 <h2 class="anchored" data-anchor-id="data-contrast-and-statistical-criteria">3. Data, contrast and statistical criteria</h2>
-<p>We use the course-provided phosphoproteomics differential expression analysis (DEA) for ancestral <em>Staphylococcus aureus</em> JE2 (<code>anc</code>), comparing TSB control with 15-minute supernatant exposure (<code>SNpulse</code>). We retain observed estimates with FDR &lt; 0.05 and |log2 fold change| &gt; 1. We do <strong>not</strong> apply an additional 2-of-3-replicate detection filter to the DEA here. The course contrast <code>TSB_vs_SNpulse_at_anc</code> is <strong>TSB minus SNpulse</strong>: a negative <code>diff</code> means higher abundance after exposure.</p>
+<p>We use the course-provided phosphoproteomics differential expression analysis (DEA) for ancestral <em>Staphylococcus aureus</em> JE2 (<code>anc</code>), comparing TSB control with 15-minute supernatant exposure (<code>SNpulse</code>). To match the combined analysis and Simona’s protein analysis, we retain observed estimates detected in at least 2 of 3 replicates in <strong>both</strong> TSB and SNpulse, with FDR &lt; 0.05 and |log2 fold change| &gt; 1. Detection is counted from the normalized abundances used by the course DEA. The course contrast <code>TSB_vs_SNpulse_at_anc</code> is <strong>TSB minus SNpulse</strong>: a negative <code>diff</code> means higher abundance after exposure.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Show code</summary>
@@ -2766,7 +2765,8 @@ vertical-align: middle;
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>dea_phospho <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">&quot;phospho_STYH&quot;</span>)</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="ot">&lt;-</span> <span class="fu">read_sites</span>(<span class="st">&quot;STYH&quot;</span>)</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>dea_total <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">&quot;total&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>dea_total <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">&quot;total&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>abundances_phospho <span class="ot">&lt;-</span> <span class="fu">read_abundances</span>(<span class="st">&quot;phospho_STYH&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 </section>
@@ -2777,28 +2777,38 @@ vertical-align: middle;
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>contrast_15min <span class="ot">&lt;-</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>phospho_15min <span class="ot">&lt;-</span> dea_phospho <span class="sc">|&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="ot">&lt;-</span> phospho_15min <span class="sc">|&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff), FDR <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, protein_key, staa8_gene, staa8_uniprot,</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                product, residue, position, SequenceWindow, diff, FDR) <span class="sc">|&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(FDR)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(significant_15min<span class="sc">$</span>site_id))</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">site =</span> <span class="fu">paste0</span>(residue, position),</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure_direction =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>      SNpulse_minus_TSB <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">&quot;Higher after 15 min&quot;</span>, <span class="st">&quot;Lower after 15 min&quot;</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, staa8_gene, staa8_uniprot, product,</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>                site, SequenceWindow, SNpulse_minus_TSB, FDR, exposure_direction) <span class="sc">|&gt;</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">&quot;Significant observed phosphosites (exposure minus control direction)&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Same reliability definition as the combined notebook:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># at least 2 measured replicates per condition, using the DEA abundance table.</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>phospho_detection <span class="ot">&lt;-</span> abundances_phospho <span class="sc">|&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(site, medium) <span class="sc">|&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(normalized_abundance)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>phospho_15min <span class="ot">&lt;-</span> dea_phospho <span class="sc">|&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(phospho_detection, <span class="at">by =</span> <span class="st">&quot;site&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">reliable =</span> dplyr<span class="sc">::</span><span class="fu">coalesce</span>(TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="ot">&lt;-</span> phospho_15min <span class="sc">|&gt;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(reliable, <span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff), FDR <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, protein_key, staa8_gene, staa8_uniprot,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>                product, residue, position, SequenceWindow, diff, FDR) <span class="sc">|&gt;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(FDR)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(significant_15min<span class="sc">$</span>site_id))</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">site =</span> <span class="fu">paste0</span>(residue, position),</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure_direction =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>      SNpulse_minus_TSB <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">&quot;Higher after 15 min&quot;</span>, <span class="st">&quot;Lower after 15 min&quot;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, staa8_gene, staa8_uniprot, product,</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>                site, SequenceWindow, SNpulse_minus_TSB, FDR, exposure_direction) <span class="sc">|&gt;</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">&quot;Significant observed phosphosites (exposure minus control direction)&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -3208,7 +3218,7 @@ vertical-align: middle;
 </section>
 <section id="compare-phosphosite-changes-with-total-protein-changes" class="level2">
 <h2 class="anchored" data-anchor-id="compare-phosphosite-changes-with-total-protein-changes">7. Compare phosphosite changes with total-protein changes</h2>
-<p>We use the <strong>same 15-minute contrast</strong> and observed total-proteomics DEA. Both DEA <code>diff</code> values are TSB minus SNpulse, so we reverse their signs below to make <em>positive</em> values mean higher abundance after exposure. A nonsignificant total-protein result is <strong>not</strong> proof of no protein-level change.</p>
+<p>We use the <strong>same 15-minute contrast</strong> and observed total-proteomics DEA. For total-protein significance, we use the same FDR and fold-change thresholds; protein detection reliability can be assessed separately using Simona’s abundance-based criterion. Both DEA <code>diff</code> values are TSB minus SNpulse, so we reverse their signs below to make <em>positive</em> values mean higher abundance after exposure. A nonsignificant total-protein result is <strong>not</strong> proof of no protein-level change.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Show code</summary>
@@ -3295,7 +3305,7 @@ vertical-align: middle;
 </table>
 </div>
 </div>
-<p>For the previously inspected results, total-protein abundance did not meet our significance criteria for RpoY or the 5′-nucleotidase family protein. <strong>IsaA total protein decreased significantly</strong>, whereas its S194 phosphosite-associated intensity increased. This opposing direction is an important observation; it does <strong>not</strong>, on its own, establish a quantitative change in phosphorylation occupancy or enzyme activity.</p>
+<p>For the previously inspected results, total-protein abundance did not meet our significance criteria for RpoY or the 5′-nucleotidase family protein. <strong>IsaA total protein increased significantly</strong>, as did its S194-containing phosphopeptide. The phosphopeptide increase may therefore be partly explained by increased IsaA abundance; the data do <strong>not</strong> establish a quantitative change in phosphorylation occupancy or enzyme activity.</p>
 </section>
 <section id="functional-interpretation-and-next-annotation-steps" class="level2">
 <h2 class="anchored" data-anchor-id="functional-interpretation-and-next-annotation-steps">8. Functional interpretation and next annotation steps</h2>
@@ -3329,19 +3339,18 @@ vertical-align: middle;
 </tr>
 </tbody>
 </table>
-<p>These are protein-level annotations or research leads, <strong>not demonstrated effects of phosphorylation at T21, S33 or S194</strong>. We have not yet verified specific STRING association partners or site-specific functional evidence. Next, consult <a href="https://www.uniprot.org/">UniProt</a> for curated function, location and site information, and <a href="https://string-db.org/">STRING</a> for <em>S. aureus</em> functional associations (which do not necessarily represent direct physical interactions).</p>
+<p>These are protein-level annotations or research leads, <strong>not demonstrated effects of phosphorylation at T21, S33 or S194</strong>. The STRING associations discussed below provide functional context, not site-specific mechanistic evidence. For further verification, consult <a href="https://www.uniprot.org/">UniProt</a> for curated function, location and site information, and <a href="https://string-db.org/">STRING</a> for <em>S. aureus</em> functional associations (which do not necessarily represent direct physical interactions).</p>
 <section id="rpoy-rna-polymerase-subunit-epsilon" class="level3">
 <h3 class="anchored" data-anchor-id="rpoy-rna-polymerase-subunit-epsilon">8.1 RpoY – RNA polymerase subunit epsilon</h3>
-</section>
-<section id="rpoy-dna-directed-rna-polymerase-subunit-epsilon-q2fzg8" class="level3">
-<h3 class="anchored" data-anchor-id="rpoy-dna-directed-rna-polymerase-subunit-epsilon-q2fzg8">RpoY — DNA-directed RNA polymerase subunit epsilon (Q2FZG8)</h3>
 <p>RpoY is a small (72 amino acids), non-essential component of bacterial RNA polymerase, which is involved in DNA-templated transcription. UniProt annotates DNA binding, RNA polymerase activity, and transcription as associated molecular functions and biological processes, based on computational UniRule annotations.</p>
 <p>After 15 minutes of exposure to <em>P. aeruginosa</em> supernatant, the T21-containing phosphopeptide showed a significant decrease in abundance (log2FC for TSB vs. SNpulse = +2.43; FDR = 0.0033), while total RpoY protein abundance did not change significantly (FDR = 0.209).</p>
 <p>This finding suggests a potential early phosphorylation-associated response involving the transcription machinery. However, UniProt does not annotate T21 as a known phosphorylation site, and its functional consequences remain unknown. Therefore, no direct conclusion about changes in RNA polymerase activity or transcription can be drawn.</p>
-<p>STRING functional association analysis</p>
+<section id="string-functional-association-analysis" class="level4">
+<h4 class="anchored" data-anchor-id="string-functional-association-analysis">STRING functional association analysis</h4>
 <p>STRING analysis using UniProt accession Q2FZG8 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD30156.1, a conserved hypothetical protein belonging to the UPF0356 family. The strongest functional associations were with RNA polymerase subunits RpoA (score 0.992), RpoB (0.932), RpoC (0.932), and RpoZ (0.932), as well as the sigma factor SigA (0.898). An additional association was identified with the RNA-processing enzyme Rnj1 (0.864).</p>
 <p>These associations support the UniProt-based annotation of RpoY as a component of the bacterial transcription machinery, despite its hypothetical-protein designation in some databases.</p>
 <p>The decreased T21 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore represent an early phosphorylation-associated change involving transcription-related machinery. However, STRING associations do not establish direct physical interactions or demonstrate that T21 phosphorylation alters transcriptional activity.</p>
+</section>
 </section>
 <section id="nucleotidase-lipoprotein-ep4-family-q2g170" class="level3">
 <h3 class="anchored" data-anchor-id="nucleotidase-lipoprotein-ep4-family-q2g170">8.2 5′-Nucleotidase – lipoprotein e(P4) family (Q2G170)</h3>
@@ -3349,35 +3358,39 @@ vertical-align: middle;
 <p>UniProt predicts a signal peptide at positions 1–31 and a mature protein chain at positions 32–296. The identified phosphorylation site, S33, is therefore located near the predicted N-terminus of the mature protein. A cell-envelope-associated localization is plausible, but has not been experimentally verified for this entry.</p>
 <p>After 15 minutes of exposure to P. aeruginosa supernatant, the S33-containing phosphopeptide showed a significant increase in abundance (log2FC for TSB vs. SNpulse = −2.42; FDR = 0.0175), while total protein abundance did not change significantly (FDR = 0.776).</p>
 <p>This observation may reflect an early phosphorylation-associated response involving a protein potentially associated with nucleotide metabolism or the cell envelope. The proximity of S33 to the predicted signal peptide cleavage site is noteworthy, but its functional significance remains unknown. UniProt does not annotate S33 as a known phosphorylation site, and no conclusion about altered enzymatic activity, processing, or phosphorylation occupancy can be drawn from these data alone.</p>
-<p>STRING functional association analysis</p>
+<section id="string-functional-association-analysis-1" class="level4">
+<h4 class="anchored" data-anchor-id="string-functional-association-analysis-1">STRING functional association analysis</h4>
 <p>STRING analysis using UniProt accession Q2G170 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD29455.1, annotated as a 5′-nucleotidase, lipoprotein e(P4) family protein.</p>
 <p>Three predicted functional partners were identified: DeoD and DeoD-2, both annotated as purine nucleoside phosphorylases, and GuaB, an inosine 5′-monophosphate dehydrogenase involved in guanine nucleotide biosynthesis. All three associations had STRING confidence scores of 0.500 and were supported by text-mining evidence.</p>
 <p>These findings suggest a possible functional connection to purine nucleotide metabolism, consistent with the protein-family annotation. However, the associations are not direct experimental evidence of enzymatic function or physical interaction.</p>
 <p>The increased S33 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore involve a protein associated with nucleotide-related processes. Nevertheless, the functional consequence of S33 phosphorylation remains unknown, and no direct effect on nucleotide metabolism can be concluded.</p>
 </section>
-<section id="isaa-transglycosylase-q2fv52" class="level3">
-<h3 class="anchored" data-anchor-id="isaa-transglycosylase-q2fv52">8.3 IsaA – Transglycosylase (Q2FV52)</h3>
+</section>
+<section id="isaa-peptidoglycan-hydrolase-q2fv52" class="level3">
+<h3 class="anchored" data-anchor-id="isaa-peptidoglycan-hydrolase-q2fv52">8.3 IsaA – Peptidoglycan hydrolase (Q2FV52)</h3>
 <p>IsaA (JE2: ARG47142.1) is a secreted peptidoglycan-cleaving enzyme involved in bacterial cell-wall degradation and remodeling. UniProt annotates hydrolase activity acting on glycosyl bonds and participation in peptidoglycan catabolism, supported by published research. Studies involving IsaA and the related protein SceD also indicate roles in bacterial cell separation, clumping, and virulence.</p>
 <p>IsaA contains a signal peptide at positions 1–29, followed by the mature protein chain (30–233). The identified phosphorylation site S194 is located within the mature protein. UniProt does not list S194 as an annotated phosphorylation site.</p>
-<p>After 15 minutes of exposure to P. aeruginosa supernatant, the S194-containing phosphopeptide increased significantly (log2FC for TSB vs. SNpulse = −2.80; FDR = 0.0320), whereas total IsaA protein abundance decreased significantly (log2FC for TSB vs. SNpulse = +1.87; FDR ≈ 6.75 × 10⁻⁸).</p>
-<p>The opposing changes in phosphopeptide and total protein abundance suggest a phosphorylation-associated response that cannot be explained simply by increased total IsaA abundance. Given IsaA’s role in peptidoglycan cleavage, this may be relevant to cell-wall remodeling during early exposure. However, the functional effect of S194 phosphorylation remains unknown, and the data do not directly establish altered enzymatic activity, secretion, or phosphorylation occupancy.</p>
-<p>STRING functional association analysis</p>
+<p>After 15 minutes of exposure to P. aeruginosa supernatant, the S194-containing phosphopeptide increased significantly (log2FC for TSB vs. SNpulse = −2.80; FDR = 0.0320), and total IsaA protein abundance also increased significantly (log2FC for TSB vs. SNpulse = −1.87; FDR ≈ 6.75 × 10⁻⁸).</p>
+<p>Because both phosphopeptide and total protein abundance increased, the higher S194 phosphopeptide signal may be partly explained by increased total IsaA abundance. Given IsaA’s role in peptidoglycan cleavage, this may be relevant to cell-wall remodeling during early exposure. However, the functional effect of S194 phosphorylation remains unknown, and the data do not directly establish altered enzymatic activity, secretion, or phosphorylation occupancy.</p>
+<section id="string-functional-association-analysis-2" class="level4">
+<h4 class="anchored" data-anchor-id="string-functional-association-analysis-2">STRING functional association analysis</h4>
 <p>STRING analysis of IsaA in Staphylococcus aureus NCTC 8325 identified functional associations with several proteins involved in cell-wall remodeling and cell division. The highest-scoring partners included the autolysin Atl (score 0.760), the LysM-domain protein SsaA (0.694), and the peptidoglycan hydrolase LytM (0.580). Additional associations included the cell-division proteins FtsL (0.536) and EzrA (0.531).</p>
 <p>These associations support a functional context for IsaA involving peptidoglycan metabolism and cell division, consistent with its experimentally supported peptidoglycan-cleaving activity.</p>
-<p>The significant increase in the S194 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure, together with the significant decrease in total IsaA abundance, may therefore reflect an early response involving cell-wall-associated processes. However, STRING associations do not establish direct physical interactions or phosphorylation-dependent regulation, and the functional consequence of S194 phosphorylation remains unknown.</p>
+<p>The significant increase in the S194 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure, together with the significant increase in total IsaA abundance, may therefore reflect an early response involving cell-wall-associated processes. However, STRING associations do not establish direct physical interactions or phosphorylation-dependent regulation, and the functional consequence of S194 phosphorylation remains unknown.</p>
+</section>
 </section>
 <section id="comparison-of-biological-processes" class="level3">
 <h3 class="anchored" data-anchor-id="comparison-of-biological-processes">8.4 Comparison of biological processes</h3>
 <p>The three proteins containing significantly altered phosphosites after 15 minutes of P. aeruginosa supernatant exposure are associated with distinct biological functions.</p>
 <p>RpoY is annotated as a non-essential subunit of bacterial RNA polymerase and is therefore associated with DNA-templated transcription. The 5′-nucleotidase, lipoprotein e(P4) family protein has a less well-characterized function, with possible involvement in nucleotide processing and cell-envelope-associated processes. IsaA is a secreted peptidoglycan-cleaving enzyme involved in cell-wall degradation and remodeling, supported by published experimental research.</p>
-<p>The phosphopeptide-associated signal decreased for RpoY T21 but increased for the 5′-nucleotidase-family protein S33 and IsaA S194. Total-proteomics comparison showed no statistically significant abundance changes for RpoY or the 5′-nucleotidase-family protein, whereas total IsaA abundance decreased significantly despite an increase in its S194 phosphopeptide signal.</p>
+<p>The phosphopeptide-associated signal decreased for RpoY T21 but increased for the 5′-nucleotidase-family protein S33 and IsaA S194. Total-proteomics comparison showed no statistically significant abundance changes for RpoY or the 5′-nucleotidase-family protein, whereas total IsaA abundance increased significantly alongside its S194 phosphopeptide signal.</p>
 <p>Together, these findings indicate that the early phosphoproteomics response involves proteins associated with different cellular processes rather than one clearly defined pathway. The results provide potential links to transcription, nucleotide-related functions, and cell-wall remodeling, but do not establish altered protein activity or phosphorylation occupancy.</p>
 <p>Because only three phosphosites met the statistical criteria, no pathway enrichment or coordinated functional response can be inferred from these proteins alone. The biological significance of the individual phosphorylation events remains to be established.</p>
 </section>
 </section>
 <section id="interim-conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="interim-conclusion">9. Interim conclusion</h2>
-<p>The observed course DEA identifies three phosphosites meeting FDR &lt; 0.05 and |log2FC| &gt; 1 after 15 minutes of exposure. RpoY T21 shows a lower phosphosite-associated signal after exposure, while the 5′-nucleotidase-family S33 and IsaA S194 show higher signals. All three sites map uniquely to entries in the JE2 protein FASTA, with matching expected residues and local sequence windows. Comparing against total proteomics reveals that IsaA S194 and total IsaA abundance change in opposite directions. These findings motivate investigation of transcription, nucleotide-related processes and cell-wall biology, but do not demonstrate altered protein activity or phosphorylation occupancy. Functional annotation and mechanistic interpretation remain to be completed.</p>
+<p>The course DEA, filtered to observed estimates with detection in at least 2 of 3 replicates per condition, identifies three phosphosites meeting FDR &lt; 0.05 and |log2FC| &gt; 1 after 15 minutes of exposure. RpoY T21 shows a lower phosphosite-associated signal after exposure, while the 5′-nucleotidase-family S33 and IsaA S194 show higher signals. All three sites map uniquely to entries in the JE2 protein FASTA, with matching expected residues and local sequence windows. Comparing against total proteomics reveals that both the IsaA S194 phosphopeptide and total IsaA abundance increase, so the phosphopeptide change cannot be interpreted as a change in phosphorylation occupancy. These findings motivate investigation of transcription, nucleotide-related processes and cell-wall biology, but do not demonstrate altered protein activity or phosphorylation occupancy. Functional annotation and mechanistic interpretation remain to be completed.</p>
 <!-- -->
 
 </section>
@@ -3858,7 +3871,7 @@ vertical-align: middle;
 <span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Data, contrast and statistical criteria</span></span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>We use the course-provided phosphoproteomics differential expression analysis (DEA) for ancestral *Staphylococcus aureus* JE2 (`anc`), comparing TSB control with 15-minute supernatant exposure (`SNpulse`). We retain observed estimates with FDR &lt; 0.05 and |log2 fold change| &gt; 1. We do **not** apply an additional 2-of-3-replicate detection filter to the DEA here. The course contrast `TSB_vs_SNpulse_at_anc` is **TSB minus SNpulse**: a negative <span class="in">`diff`</span> means higher abundance after exposure.</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>We use the course-provided phosphoproteomics differential expression analysis (DEA) for ancestral *Staphylococcus aureus* JE2 (`anc`), comparing TSB control with 15-minute supernatant exposure (`SNpulse`). To match the combined analysis and Simona’s protein analysis, we retain observed estimates detected in at least 2 of 3 replicates in **both** TSB and SNpulse, with FDR &lt; 0.05 and |log2 fold change| &gt; 1. Detection is counted from the normalized abundances used by the course DEA. The course contrast `TSB_vs_SNpulse_at_anc` is **TSB minus SNpulse**: a negative <span class="in">`diff`</span> means higher abundance after exposure.</span>
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
 <span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: setup</span></span>
@@ -3874,287 +3887,296 @@ vertical-align: middle;
 <span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>dea_phospho <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">&quot;phospho_STYH&quot;</span>)</span>
 <span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>sites_raw <span class="ot">&lt;-</span> <span class="fu">read_sites</span>(<span class="st">&quot;STYH&quot;</span>)</span>
 <span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>dea_total <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">&quot;total&quot;</span>)</span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Significant phosphosites after 15 minutes</span></span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: significant-sites</span></span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>contrast_15min <span class="ot">&lt;-</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span></span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>phospho_15min <span class="ot">&lt;-</span> dea_phospho <span class="sc">|&gt;</span></span>
-<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>)</span>
-<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="ot">&lt;-</span> phospho_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff), FDR <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, protein_key, staa8_gene, staa8_uniprot,</span>
-<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>                product, residue, position, SequenceWindow, diff, FDR) <span class="sc">|&gt;</span></span>
-<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(FDR)</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>abundances_phospho <span class="ot">&lt;-</span> <span class="fu">read_abundances</span>(<span class="st">&quot;phospho_STYH&quot;</span>)</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Significant phosphosites after 15 minutes</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: significant-sites</span></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>contrast_15min <span class="ot">&lt;-</span> <span class="st">&quot;TSB_vs_SNpulse_at_anc&quot;</span></span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Same reliability definition as the combined notebook:</span></span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a><span class="co"># at least 2 measured replicates per condition, using the DEA abundance table.</span></span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>phospho_detection <span class="ot">&lt;-</span> abundances_phospho <span class="sc">|&gt;</span></span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(site, medium) <span class="sc">|&gt;</span></span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(normalized_abundance)), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> n, <span class="at">values_fill =</span> <span class="dv">0</span>)</span>
 <span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(significant_15min<span class="sc">$</span>site_id))</span>
-<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">site =</span> <span class="fu">paste0</span>(residue, position),</span>
-<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a>    <span class="at">SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
-<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure_direction =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
-<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>      SNpulse_minus_TSB <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">&quot;Higher after 15 min&quot;</span>, <span class="st">&quot;Lower after 15 min&quot;</span></span>
-<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, staa8_gene, staa8_uniprot, product,</span>
-<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a>                site, SequenceWindow, SNpulse_minus_TSB, FDR, exposure_direction) <span class="sc">|&gt;</span></span>
-<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">&quot;Significant observed phosphosites (exposure minus control direction)&quot;</span>)</span>
-<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">significant_sites =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
-<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">distinct_proteins =</span> dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(protein_key)</span>
-<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">&quot;Number of significant sites and associated proteins&quot;</span>)</span>
-<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Check detection and direction using measured phosphosite intensities</span></span>
-<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a>Raw log2 intensity means provide a direction check; they are not equivalent to modeled DEA effects or phosphorylation occupancy.</span>
-<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: site-intensities</span></span>
-<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a>site_intensity <span class="ot">&lt;-</span> sites_raw <span class="sc">|&gt;</span></span>
-<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
-<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a>    genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>),</span>
-<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a>    site_id <span class="sc">%in%</span> significant_15min<span class="sc">$</span>site_id</span>
-<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(site_id, medium) <span class="sc">|&gt;</span></span>
-<span id="cb8-97"><a href="#cb8-97" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb8-98"><a href="#cb8-98" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_detected =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)),</span>
-<span id="cb8-99"><a href="#cb8-99" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_log2_intensity =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(log2_intensity))) <span class="cn">NA_real_</span></span>
-<span id="cb8-100"><a href="#cb8-100" aria-hidden="true" tabindex="-1"></a>      <span class="cf">else</span> <span class="fu">mean</span>(log2_intensity, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb8-101"><a href="#cb8-101" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
-<span id="cb8-102"><a href="#cb8-102" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-103"><a href="#cb8-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-104"><a href="#cb8-104" aria-hidden="true" tabindex="-1"></a>site_intensity <span class="sc">|&gt;</span></span>
-<span id="cb8-105"><a href="#cb8-105" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>, <span class="at">caption =</span> <span class="st">&quot;Raw phosphosite intensity and replicate detection&quot;</span>)</span>
-<span id="cb8-106"><a href="#cb8-106" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-107"><a href="#cb8-107" aria-hidden="true" tabindex="-1"></a>intensity_wide <span class="ot">&lt;-</span> site_intensity <span class="sc">|&gt;</span></span>
-<span id="cb8-108"><a href="#cb8-108" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
-<span id="cb8-109"><a href="#cb8-109" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> medium,</span>
-<span id="cb8-110"><a href="#cb8-110" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="fu">c</span>(n_detected, mean_log2_intensity)</span>
-<span id="cb8-111"><a href="#cb8-111" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-112"><a href="#cb8-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-113"><a href="#cb8-113" aria-hidden="true" tabindex="-1"></a>direction_check <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-114"><a href="#cb8-114" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(intensity_wide, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-115"><a href="#cb8-115" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb8-116"><a href="#cb8-116" aria-hidden="true" tabindex="-1"></a>    <span class="at">raw_SNpulse_minus_TSB =</span> mean_log2_intensity_SNpulse <span class="sc">-</span> mean_log2_intensity_TSB,</span>
-<span id="cb8-117"><a href="#cb8-117" aria-hidden="true" tabindex="-1"></a>    <span class="at">DEA_SNpulse_minus_TSB =</span> <span class="sc">-</span>diff</span>
-<span id="cb8-118"><a href="#cb8-118" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-119"><a href="#cb8-119" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(staa8_uniprot, residue, position,</span>
-<span id="cb8-120"><a href="#cb8-120" aria-hidden="true" tabindex="-1"></a>                n_detected_TSB, n_detected_SNpulse,</span>
-<span id="cb8-121"><a href="#cb8-121" aria-hidden="true" tabindex="-1"></a>                mean_log2_intensity_TSB, mean_log2_intensity_SNpulse,</span>
-<span id="cb8-122"><a href="#cb8-122" aria-hidden="true" tabindex="-1"></a>                raw_SNpulse_minus_TSB, DEA_SNpulse_minus_TSB, FDR)</span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a>phospho_15min <span class="ot">&lt;-</span> dea_phospho <span class="sc">|&gt;</span></span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(phospho_detection, <span class="at">by =</span> <span class="st">&quot;site&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">reliable =</span> dplyr<span class="sc">::</span><span class="fu">coalesce</span>(TSB <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">&amp;</span> SNpulse <span class="sc">&gt;=</span> <span class="dv">2</span>, <span class="cn">FALSE</span>))</span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="ot">&lt;-</span> phospho_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(reliable, <span class="sc">!</span><span class="fu">is.na</span>(FDR), <span class="sc">!</span><span class="fu">is.na</span>(diff), FDR <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, protein_key, staa8_gene, staa8_uniprot,</span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>                product, residue, position, SequenceWindow, diff, FDR) <span class="sc">|&gt;</span></span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(FDR)</span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(significant_15min<span class="sc">$</span>site_id))</span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">site =</span> <span class="fu">paste0</span>(residue, position),</span>
+<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
+<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure_direction =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
+<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>      SNpulse_minus_TSB <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">&quot;Higher after 15 min&quot;</span>, <span class="st">&quot;Lower after 15 min&quot;</span></span>
+<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id, staa8_gene, staa8_uniprot, product,</span>
+<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a>                site, SequenceWindow, SNpulse_minus_TSB, FDR, exposure_direction) <span class="sc">|&gt;</span></span>
+<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">&quot;Significant observed phosphosites (exposure minus control direction)&quot;</span>)</span>
+<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a>significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">significant_sites =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
+<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a>    <span class="at">distinct_proteins =</span> dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(protein_key)</span>
+<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">&quot;Number of significant sites and associated proteins&quot;</span>)</span>
+<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Check detection and direction using measured phosphosite intensities</span></span>
+<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a>Raw log2 intensity means provide a direction check; they are not equivalent to modeled DEA effects or phosphorylation occupancy.</span>
+<span id="cb8-97"><a href="#cb8-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-100"><a href="#cb8-100" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb8-101"><a href="#cb8-101" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: site-intensities</span></span>
+<span id="cb8-102"><a href="#cb8-102" aria-hidden="true" tabindex="-1"></a>site_intensity <span class="ot">&lt;-</span> sites_raw <span class="sc">|&gt;</span></span>
+<span id="cb8-103"><a href="#cb8-103" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb8-104"><a href="#cb8-104" aria-hidden="true" tabindex="-1"></a>    genotype <span class="sc">==</span> <span class="st">&quot;anc&quot;</span>, medium <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;TSB&quot;</span>, <span class="st">&quot;SNpulse&quot;</span>),</span>
+<span id="cb8-105"><a href="#cb8-105" aria-hidden="true" tabindex="-1"></a>    site_id <span class="sc">%in%</span> significant_15min<span class="sc">$</span>site_id</span>
+<span id="cb8-106"><a href="#cb8-106" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-107"><a href="#cb8-107" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(site_id, medium) <span class="sc">|&gt;</span></span>
+<span id="cb8-108"><a href="#cb8-108" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb8-109"><a href="#cb8-109" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_detected =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(log2_intensity)),</span>
+<span id="cb8-110"><a href="#cb8-110" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_log2_intensity =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(log2_intensity))) <span class="cn">NA_real_</span></span>
+<span id="cb8-111"><a href="#cb8-111" aria-hidden="true" tabindex="-1"></a>      <span class="cf">else</span> <span class="fu">mean</span>(log2_intensity, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb8-112"><a href="#cb8-112" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb8-113"><a href="#cb8-113" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-114"><a href="#cb8-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-115"><a href="#cb8-115" aria-hidden="true" tabindex="-1"></a>site_intensity <span class="sc">|&gt;</span></span>
+<span id="cb8-116"><a href="#cb8-116" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>, <span class="at">caption =</span> <span class="st">&quot;Raw phosphosite intensity and replicate detection&quot;</span>)</span>
+<span id="cb8-117"><a href="#cb8-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-118"><a href="#cb8-118" aria-hidden="true" tabindex="-1"></a>intensity_wide <span class="ot">&lt;-</span> site_intensity <span class="sc">|&gt;</span></span>
+<span id="cb8-119"><a href="#cb8-119" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
+<span id="cb8-120"><a href="#cb8-120" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> medium,</span>
+<span id="cb8-121"><a href="#cb8-121" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="fu">c</span>(n_detected, mean_log2_intensity)</span>
+<span id="cb8-122"><a href="#cb8-122" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb8-123"><a href="#cb8-123" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-124"><a href="#cb8-124" aria-hidden="true" tabindex="-1"></a>direction_check <span class="sc">|&gt;</span></span>
-<span id="cb8-125"><a href="#cb8-125" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>, <span class="at">caption =</span> <span class="st">&quot;Detection and raw versus modeled direction of change&quot;</span>)</span>
-<span id="cb8-126"><a href="#cb8-126" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb8-127"><a href="#cb8-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-128"><a href="#cb8-128" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Identify the proteins in the JE2 reference FASTA</span></span>
-<span id="cb8-129"><a href="#cb8-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-130"><a href="#cb8-130" aria-hidden="true" tabindex="-1"></a>The experiment-specific protein IDs can be recovered from the <span class="in">`site_id`</span> and matched to the **JE2-specific** FASTA at <span class="in">`data/raw/resources/JE2_proteins.fasta`</span>. This FASTA includes BLAST-based UniProt reference annotations in its headers. These are annotation matches, not proof that sequences are identical across strains.</span>
-<span id="cb8-131"><a href="#cb8-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-134"><a href="#cb8-134" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb8-135"><a href="#cb8-135" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: je2-protein-identification</span></span>
-<span id="cb8-136"><a href="#cb8-136" aria-hidden="true" tabindex="-1"></a><span class="co"># Biostrings was installed previously; no package installation during rendering.</span></span>
-<span id="cb8-137"><a href="#cb8-137" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(<span class="st">&quot;Biostrings&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
-<span id="cb8-138"><a href="#cb8-138" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;Install Biostrings once using BiocManager::install(&#39;Biostrings&#39;).&quot;</span>)</span>
-<span id="cb8-139"><a href="#cb8-139" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-124"><a href="#cb8-124" aria-hidden="true" tabindex="-1"></a>direction_check <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-125"><a href="#cb8-125" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(intensity_wide, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-126"><a href="#cb8-126" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb8-127"><a href="#cb8-127" aria-hidden="true" tabindex="-1"></a>    <span class="at">raw_SNpulse_minus_TSB =</span> mean_log2_intensity_SNpulse <span class="sc">-</span> mean_log2_intensity_TSB,</span>
+<span id="cb8-128"><a href="#cb8-128" aria-hidden="true" tabindex="-1"></a>    <span class="at">DEA_SNpulse_minus_TSB =</span> <span class="sc">-</span>diff</span>
+<span id="cb8-129"><a href="#cb8-129" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-130"><a href="#cb8-130" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(staa8_uniprot, residue, position,</span>
+<span id="cb8-131"><a href="#cb8-131" aria-hidden="true" tabindex="-1"></a>                n_detected_TSB, n_detected_SNpulse,</span>
+<span id="cb8-132"><a href="#cb8-132" aria-hidden="true" tabindex="-1"></a>                mean_log2_intensity_TSB, mean_log2_intensity_SNpulse,</span>
+<span id="cb8-133"><a href="#cb8-133" aria-hidden="true" tabindex="-1"></a>                raw_SNpulse_minus_TSB, DEA_SNpulse_minus_TSB, FDR)</span>
+<span id="cb8-134"><a href="#cb8-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-135"><a href="#cb8-135" aria-hidden="true" tabindex="-1"></a>direction_check <span class="sc">|&gt;</span></span>
+<span id="cb8-136"><a href="#cb8-136" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>, <span class="at">caption =</span> <span class="st">&quot;Detection and raw versus modeled direction of change&quot;</span>)</span>
+<span id="cb8-137"><a href="#cb8-137" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-138"><a href="#cb8-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-139"><a href="#cb8-139" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Identify the proteins in the JE2 reference FASTA</span></span>
 <span id="cb8-140"><a href="#cb8-140" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-141"><a href="#cb8-141" aria-hidden="true" tabindex="-1"></a><span class="co"># Resolve path from the project root or a .qmd two folders below it.</span></span>
-<span id="cb8-142"><a href="#cb8-142" aria-hidden="true" tabindex="-1"></a>fasta_candidates <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb8-143"><a href="#cb8-143" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;data/raw/resources/JE2_proteins.fasta&quot;</span>,</span>
-<span id="cb8-144"><a href="#cb8-144" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;../../data/raw/resources/JE2_proteins.fasta&quot;</span></span>
-<span id="cb8-145"><a href="#cb8-145" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-146"><a href="#cb8-146" aria-hidden="true" tabindex="-1"></a>fasta_found <span class="ot">&lt;-</span> fasta_candidates[<span class="fu">file.exists</span>(fasta_candidates)]</span>
-<span id="cb8-147"><a href="#cb8-147" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(fasta_found) <span class="sc">==</span> <span class="dv">0</span>L) {</span>
-<span id="cb8-148"><a href="#cb8-148" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;JE2_proteins.fasta not found. Check its location under data/raw/resources/.&quot;</span>)</span>
-<span id="cb8-149"><a href="#cb8-149" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-150"><a href="#cb8-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-151"><a href="#cb8-151" aria-hidden="true" tabindex="-1"></a>je2_proteins <span class="ot">&lt;-</span> Biostrings<span class="sc">::</span><span class="fu">readAAStringSet</span>(fasta_found[<span class="dv">1</span>])</span>
-<span id="cb8-152"><a href="#cb8-152" aria-hidden="true" tabindex="-1"></a>je2_headers <span class="ot">&lt;-</span> <span class="fu">names</span>(je2_proteins)</span>
-<span id="cb8-153"><a href="#cb8-153" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-154"><a href="#cb8-154" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the unique FASTA entry using the exact JE2 experimental protein ID.</span></span>
-<span id="cb8-155"><a href="#cb8-155" aria-hidden="true" tabindex="-1"></a>identify_je2 <span class="ot">&lt;-</span> <span class="cf">function</span>(site_id, expected_residue, position, sequence_window) {</span>
-<span id="cb8-156"><a href="#cb8-156" aria-hidden="true" tabindex="-1"></a>  <span class="co"># e.g. lcl_CP020619.1_prot_ARG45570.1_1104_T21 -&gt; ARG45570.1</span></span>
-<span id="cb8-157"><a href="#cb8-157" aria-hidden="true" tabindex="-1"></a>  je2_id <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">&quot;^.*_prot_(ARG[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+)_[0-9]+_[A-Z][0-9]+$&quot;</span>, <span class="st">&quot;</span><span class="sc">\\</span><span class="st">1&quot;</span>, site_id)</span>
-<span id="cb8-158"><a href="#cb8-158" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">&quot;^ARG[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+$&quot;</span>, je2_id)) {</span>
-<span id="cb8-159"><a href="#cb8-159" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Cannot parse JE2 protein ID from site: &quot;</span>, site_id)</span>
-<span id="cb8-160"><a href="#cb8-160" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-161"><a href="#cb8-161" aria-hidden="true" tabindex="-1"></a>  hits <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="fu">paste0</span>(<span class="st">&quot;[protein_id=&quot;</span>, je2_id, <span class="st">&quot;]&quot;</span>), je2_headers, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-162"><a href="#cb8-162" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(hits) <span class="sc">!=</span> <span class="dv">1</span>L) {</span>
-<span id="cb8-163"><a href="#cb8-163" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Expected exactly one JE2 FASTA match for &quot;</span>, je2_id,</span>
-<span id="cb8-164"><a href="#cb8-164" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;; found &quot;</span>, <span class="fu">length</span>(hits))</span>
-<span id="cb8-165"><a href="#cb8-165" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-166"><a href="#cb8-166" aria-hidden="true" tabindex="-1"></a>  header <span class="ot">&lt;-</span> je2_headers[hits]</span>
-<span id="cb8-167"><a href="#cb8-167" aria-hidden="true" tabindex="-1"></a>  seq <span class="ot">&lt;-</span> <span class="fu">as.character</span>(je2_proteins[[hits]])</span>
-<span id="cb8-168"><a href="#cb8-168" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(position)</span>
-<span id="cb8-169"><a href="#cb8-169" aria-hidden="true" tabindex="-1"></a>  actual <span class="ot">&lt;-</span> <span class="cf">if</span> (pos <span class="sc">&gt;=</span> <span class="dv">1</span>L <span class="sc">&amp;&amp;</span> pos <span class="sc">&lt;=</span> <span class="fu">nchar</span>(seq)) <span class="fu">substr</span>(seq, pos, pos) <span class="cf">else</span> <span class="cn">NA_character_</span></span>
-<span id="cb8-170"><a href="#cb8-170" aria-hidden="true" tabindex="-1"></a>  window <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(actual)) {</span>
-<span id="cb8-171"><a href="#cb8-171" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(seq, <span class="fu">max</span>(<span class="dv">1</span>L, pos <span class="sc">-</span> <span class="dv">7</span>L), <span class="fu">min</span>(<span class="fu">nchar</span>(seq), pos <span class="sc">+</span> <span class="dv">7</span>L))</span>
-<span id="cb8-172"><a href="#cb8-172" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cn">NA_character_</span></span>
-<span id="cb8-173"><a href="#cb8-173" aria-hidden="true" tabindex="-1"></a>  annotation <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">&quot;[protein=&quot;</span>, header, <span class="at">fixed =</span> <span class="cn">TRUE</span>)) {</span>
-<span id="cb8-174"><a href="#cb8-174" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sub</span>(<span class="st">&quot;^.*</span><span class="sc">\\</span><span class="st">[protein=([^]]+)</span><span class="sc">\\</span><span class="st">].*$&quot;</span>, <span class="st">&quot;</span><span class="sc">\\</span><span class="st">1&quot;</span>, header)</span>
-<span id="cb8-175"><a href="#cb8-175" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cn">NA_character_</span></span>
-<span id="cb8-176"><a href="#cb8-176" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
-<span id="cb8-177"><a href="#cb8-177" aria-hidden="true" tabindex="-1"></a>    <span class="at">site_id =</span> site_id,</span>
-<span id="cb8-178"><a href="#cb8-178" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_protein_id =</span> je2_id,</span>
-<span id="cb8-179"><a href="#cb8-179" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_fasta_annotation =</span> annotation,</span>
-<span id="cb8-180"><a href="#cb8-180" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_length_aa =</span> <span class="fu">nchar</span>(seq),</span>
-<span id="cb8-181"><a href="#cb8-181" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_residue =</span> actual,</span>
-<span id="cb8-182"><a href="#cb8-182" aria-hidden="true" tabindex="-1"></a>    <span class="at">residue_matches =</span> <span class="sc">!</span><span class="fu">is.na</span>(actual) <span class="sc">&amp;&amp;</span> actual <span class="sc">==</span> expected_residue,</span>
-<span id="cb8-183"><a href="#cb8-183" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_sequence_window =</span> window,</span>
-<span id="cb8-184"><a href="#cb8-184" aria-hidden="true" tabindex="-1"></a>    <span class="at">window_matches =</span> <span class="sc">!</span><span class="fu">is.na</span>(window) <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(sequence_window) <span class="sc">&amp;&amp;</span></span>
-<span id="cb8-185"><a href="#cb8-185" aria-hidden="true" tabindex="-1"></a>      window <span class="sc">==</span> sequence_window,</span>
-<span id="cb8-186"><a href="#cb8-186" aria-hidden="true" tabindex="-1"></a>    <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
-<span id="cb8-187"><a href="#cb8-187" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-188"><a href="#cb8-188" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-189"><a href="#cb8-189" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-190"><a href="#cb8-190" aria-hidden="true" tabindex="-1"></a>je2_identification <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(<span class="fu">lapply</span>(</span>
-<span id="cb8-191"><a href="#cb8-191" aria-hidden="true" tabindex="-1"></a>  <span class="fu">seq_len</span>(<span class="fu">nrow</span>(significant_15min)),</span>
-<span id="cb8-192"><a href="#cb8-192" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(i) <span class="fu">identify_je2</span>(</span>
-<span id="cb8-193"><a href="#cb8-193" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>site_id[i],</span>
-<span id="cb8-194"><a href="#cb8-194" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>residue[i],</span>
-<span id="cb8-195"><a href="#cb8-195" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>position[i],</span>
-<span id="cb8-196"><a href="#cb8-196" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>SequenceWindow[i]</span>
-<span id="cb8-197"><a href="#cb8-197" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-198"><a href="#cb8-198" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb8-199"><a href="#cb8-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-200"><a href="#cb8-200" aria-hidden="true" tabindex="-1"></a>protein_identification <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-201"><a href="#cb8-201" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(je2_identification, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-202"><a href="#cb8-202" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">phosphosite =</span> <span class="fu">paste0</span>(residue, position)) <span class="sc">|&gt;</span></span>
-<span id="cb8-203"><a href="#cb8-203" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(je2_protein_id, staa8_uniprot, staa8_gene,</span>
-<span id="cb8-204"><a href="#cb8-204" aria-hidden="true" tabindex="-1"></a>                je2_fasta_annotation, phosphosite, je2_length_aa,</span>
-<span id="cb8-205"><a href="#cb8-205" aria-hidden="true" tabindex="-1"></a>                residue_matches, window_matches)</span>
-<span id="cb8-206"><a href="#cb8-206" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-207"><a href="#cb8-207" aria-hidden="true" tabindex="-1"></a>protein_identification <span class="sc">|&gt;</span></span>
-<span id="cb8-208"><a href="#cb8-208" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">&quot;Identification and JE2 FASTA sequence checks for significant sites&quot;</span>)</span>
-<span id="cb8-209"><a href="#cb8-209" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-141"><a href="#cb8-141" aria-hidden="true" tabindex="-1"></a>The experiment-specific protein IDs can be recovered from the <span class="in">`site_id`</span> and matched to the **JE2-specific** FASTA at <span class="in">`data/raw/resources/JE2_proteins.fasta`</span>. This FASTA includes BLAST-based UniProt reference annotations in its headers. These are annotation matches, not proof that sequences are identical across strains.</span>
+<span id="cb8-142"><a href="#cb8-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-145"><a href="#cb8-145" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb8-146"><a href="#cb8-146" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: je2-protein-identification</span></span>
+<span id="cb8-147"><a href="#cb8-147" aria-hidden="true" tabindex="-1"></a><span class="co"># Biostrings was installed previously; no package installation during rendering.</span></span>
+<span id="cb8-148"><a href="#cb8-148" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(<span class="st">&quot;Biostrings&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb8-149"><a href="#cb8-149" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;Install Biostrings once using BiocManager::install(&#39;Biostrings&#39;).&quot;</span>)</span>
+<span id="cb8-150"><a href="#cb8-150" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-151"><a href="#cb8-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-152"><a href="#cb8-152" aria-hidden="true" tabindex="-1"></a><span class="co"># Resolve path from the project root or a .qmd two folders below it.</span></span>
+<span id="cb8-153"><a href="#cb8-153" aria-hidden="true" tabindex="-1"></a>fasta_candidates <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb8-154"><a href="#cb8-154" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;data/raw/resources/JE2_proteins.fasta&quot;</span>,</span>
+<span id="cb8-155"><a href="#cb8-155" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;../../data/raw/resources/JE2_proteins.fasta&quot;</span></span>
+<span id="cb8-156"><a href="#cb8-156" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-157"><a href="#cb8-157" aria-hidden="true" tabindex="-1"></a>fasta_found <span class="ot">&lt;-</span> fasta_candidates[<span class="fu">file.exists</span>(fasta_candidates)]</span>
+<span id="cb8-158"><a href="#cb8-158" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(fasta_found) <span class="sc">==</span> <span class="dv">0</span>L) {</span>
+<span id="cb8-159"><a href="#cb8-159" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;JE2_proteins.fasta not found. Check its location under data/raw/resources/.&quot;</span>)</span>
+<span id="cb8-160"><a href="#cb8-160" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-161"><a href="#cb8-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-162"><a href="#cb8-162" aria-hidden="true" tabindex="-1"></a>je2_proteins <span class="ot">&lt;-</span> Biostrings<span class="sc">::</span><span class="fu">readAAStringSet</span>(fasta_found[<span class="dv">1</span>])</span>
+<span id="cb8-163"><a href="#cb8-163" aria-hidden="true" tabindex="-1"></a>je2_headers <span class="ot">&lt;-</span> <span class="fu">names</span>(je2_proteins)</span>
+<span id="cb8-164"><a href="#cb8-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-165"><a href="#cb8-165" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the unique FASTA entry using the exact JE2 experimental protein ID.</span></span>
+<span id="cb8-166"><a href="#cb8-166" aria-hidden="true" tabindex="-1"></a>identify_je2 <span class="ot">&lt;-</span> <span class="cf">function</span>(site_id, expected_residue, position, sequence_window) {</span>
+<span id="cb8-167"><a href="#cb8-167" aria-hidden="true" tabindex="-1"></a>  <span class="co"># e.g. lcl_CP020619.1_prot_ARG45570.1_1104_T21 -&gt; ARG45570.1</span></span>
+<span id="cb8-168"><a href="#cb8-168" aria-hidden="true" tabindex="-1"></a>  je2_id <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">&quot;^.*_prot_(ARG[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+)_[0-9]+_[A-Z][0-9]+$&quot;</span>, <span class="st">&quot;</span><span class="sc">\\</span><span class="st">1&quot;</span>, site_id)</span>
+<span id="cb8-169"><a href="#cb8-169" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">&quot;^ARG[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+$&quot;</span>, je2_id)) {</span>
+<span id="cb8-170"><a href="#cb8-170" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Cannot parse JE2 protein ID from site: &quot;</span>, site_id)</span>
+<span id="cb8-171"><a href="#cb8-171" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-172"><a href="#cb8-172" aria-hidden="true" tabindex="-1"></a>  hits <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="fu">paste0</span>(<span class="st">&quot;[protein_id=&quot;</span>, je2_id, <span class="st">&quot;]&quot;</span>), je2_headers, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-173"><a href="#cb8-173" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(hits) <span class="sc">!=</span> <span class="dv">1</span>L) {</span>
+<span id="cb8-174"><a href="#cb8-174" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Expected exactly one JE2 FASTA match for &quot;</span>, je2_id,</span>
+<span id="cb8-175"><a href="#cb8-175" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;; found &quot;</span>, <span class="fu">length</span>(hits))</span>
+<span id="cb8-176"><a href="#cb8-176" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-177"><a href="#cb8-177" aria-hidden="true" tabindex="-1"></a>  header <span class="ot">&lt;-</span> je2_headers[hits]</span>
+<span id="cb8-178"><a href="#cb8-178" aria-hidden="true" tabindex="-1"></a>  seq <span class="ot">&lt;-</span> <span class="fu">as.character</span>(je2_proteins[[hits]])</span>
+<span id="cb8-179"><a href="#cb8-179" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(position)</span>
+<span id="cb8-180"><a href="#cb8-180" aria-hidden="true" tabindex="-1"></a>  actual <span class="ot">&lt;-</span> <span class="cf">if</span> (pos <span class="sc">&gt;=</span> <span class="dv">1</span>L <span class="sc">&amp;&amp;</span> pos <span class="sc">&lt;=</span> <span class="fu">nchar</span>(seq)) <span class="fu">substr</span>(seq, pos, pos) <span class="cf">else</span> <span class="cn">NA_character_</span></span>
+<span id="cb8-181"><a href="#cb8-181" aria-hidden="true" tabindex="-1"></a>  window <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(actual)) {</span>
+<span id="cb8-182"><a href="#cb8-182" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(seq, <span class="fu">max</span>(<span class="dv">1</span>L, pos <span class="sc">-</span> <span class="dv">7</span>L), <span class="fu">min</span>(<span class="fu">nchar</span>(seq), pos <span class="sc">+</span> <span class="dv">7</span>L))</span>
+<span id="cb8-183"><a href="#cb8-183" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cn">NA_character_</span></span>
+<span id="cb8-184"><a href="#cb8-184" aria-hidden="true" tabindex="-1"></a>  annotation <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">&quot;[protein=&quot;</span>, header, <span class="at">fixed =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb8-185"><a href="#cb8-185" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sub</span>(<span class="st">&quot;^.*</span><span class="sc">\\</span><span class="st">[protein=([^]]+)</span><span class="sc">\\</span><span class="st">].*$&quot;</span>, <span class="st">&quot;</span><span class="sc">\\</span><span class="st">1&quot;</span>, header)</span>
+<span id="cb8-186"><a href="#cb8-186" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cn">NA_character_</span></span>
+<span id="cb8-187"><a href="#cb8-187" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb8-188"><a href="#cb8-188" aria-hidden="true" tabindex="-1"></a>    <span class="at">site_id =</span> site_id,</span>
+<span id="cb8-189"><a href="#cb8-189" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_protein_id =</span> je2_id,</span>
+<span id="cb8-190"><a href="#cb8-190" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_fasta_annotation =</span> annotation,</span>
+<span id="cb8-191"><a href="#cb8-191" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_length_aa =</span> <span class="fu">nchar</span>(seq),</span>
+<span id="cb8-192"><a href="#cb8-192" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_residue =</span> actual,</span>
+<span id="cb8-193"><a href="#cb8-193" aria-hidden="true" tabindex="-1"></a>    <span class="at">residue_matches =</span> <span class="sc">!</span><span class="fu">is.na</span>(actual) <span class="sc">&amp;&amp;</span> actual <span class="sc">==</span> expected_residue,</span>
+<span id="cb8-194"><a href="#cb8-194" aria-hidden="true" tabindex="-1"></a>    <span class="at">je2_sequence_window =</span> window,</span>
+<span id="cb8-195"><a href="#cb8-195" aria-hidden="true" tabindex="-1"></a>    <span class="at">window_matches =</span> <span class="sc">!</span><span class="fu">is.na</span>(window) <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(sequence_window) <span class="sc">&amp;&amp;</span></span>
+<span id="cb8-196"><a href="#cb8-196" aria-hidden="true" tabindex="-1"></a>      window <span class="sc">==</span> sequence_window,</span>
+<span id="cb8-197"><a href="#cb8-197" aria-hidden="true" tabindex="-1"></a>    <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb8-198"><a href="#cb8-198" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-199"><a href="#cb8-199" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-200"><a href="#cb8-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-201"><a href="#cb8-201" aria-hidden="true" tabindex="-1"></a>je2_identification <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(<span class="fu">lapply</span>(</span>
+<span id="cb8-202"><a href="#cb8-202" aria-hidden="true" tabindex="-1"></a>  <span class="fu">seq_len</span>(<span class="fu">nrow</span>(significant_15min)),</span>
+<span id="cb8-203"><a href="#cb8-203" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(i) <span class="fu">identify_je2</span>(</span>
+<span id="cb8-204"><a href="#cb8-204" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>site_id[i],</span>
+<span id="cb8-205"><a href="#cb8-205" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>residue[i],</span>
+<span id="cb8-206"><a href="#cb8-206" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>position[i],</span>
+<span id="cb8-207"><a href="#cb8-207" aria-hidden="true" tabindex="-1"></a>    significant_15min<span class="sc">$</span>SequenceWindow[i]</span>
+<span id="cb8-208"><a href="#cb8-208" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-209"><a href="#cb8-209" aria-hidden="true" tabindex="-1"></a>))</span>
 <span id="cb8-210"><a href="#cb8-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-211"><a href="#cb8-211" aria-hidden="true" tabindex="-1"></a>In our initial verification, the three protein mappings were **ARG45570.1 → Q2FZG8 (RpoY)**, **ARG44844.1 → Q2G170 (5′-nucleotidase family)** and **ARG47142.1 → Q2FV52 (IsaA)**. The expected residues and 15-amino-acid sequence windows matched the JE2 FASTA. The JE2 entry for RpoY is labeled *hypothetical protein* but contains a BLAST match to the reference RpoY annotation. These sequence checks support consistent mapping, not independent experimental validation of phosphorylation localization.</span>
-<span id="cb8-212"><a href="#cb8-212" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-213"><a href="#cb8-213" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Compare phosphosite changes with total-protein changes</span></span>
-<span id="cb8-214"><a href="#cb8-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-215"><a href="#cb8-215" aria-hidden="true" tabindex="-1"></a>We use the **same 15-minute contrast** and observed total-proteomics DEA. Both DEA `diff` values are TSB minus SNpulse, so we reverse their signs below to make *positive* values mean higher abundance after exposure. A nonsignificant total-protein result is **not** proof of no protein-level change.</span>
-<span id="cb8-216"><a href="#cb8-216" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-219"><a href="#cb8-219" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb8-220"><a href="#cb8-220" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: total-protein-comparison</span></span>
-<span id="cb8-221"><a href="#cb8-221" aria-hidden="true" tabindex="-1"></a>total_15min <span class="ot">&lt;-</span> dea_total <span class="sc">|&gt;</span></span>
-<span id="cb8-222"><a href="#cb8-222" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-223"><a href="#cb8-223" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(protein_key, <span class="at">total_diff =</span> diff, <span class="at">total_FDR =</span> FDR)</span>
-<span id="cb8-224"><a href="#cb8-224" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-225"><a href="#cb8-225" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(total_15min<span class="sc">$</span>protein_key))</span>
-<span id="cb8-226"><a href="#cb8-226" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-227"><a href="#cb8-227" aria-hidden="true" tabindex="-1"></a>protein_comparison <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
-<span id="cb8-228"><a href="#cb8-228" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(total_15min, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-229"><a href="#cb8-229" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb8-230"><a href="#cb8-230" aria-hidden="true" tabindex="-1"></a>    <span class="at">phosphosite =</span> <span class="fu">paste0</span>(residue, position),</span>
-<span id="cb8-231"><a href="#cb8-231" aria-hidden="true" tabindex="-1"></a>    <span class="at">phospho_SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
-<span id="cb8-232"><a href="#cb8-232" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_SNpulse_minus_TSB =</span> <span class="sc">-</span>total_diff,</span>
-<span id="cb8-233"><a href="#cb8-233" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_significant =</span> <span class="sc">!</span><span class="fu">is.na</span>(total_FDR) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(total_diff) <span class="sc">&amp;</span></span>
-<span id="cb8-234"><a href="#cb8-234" aria-hidden="true" tabindex="-1"></a>      total_FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(total_diff) <span class="sc">&gt;</span> <span class="dv">1</span></span>
-<span id="cb8-235"><a href="#cb8-235" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-236"><a href="#cb8-236" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(staa8_uniprot, staa8_gene, phosphosite,</span>
-<span id="cb8-237"><a href="#cb8-237" aria-hidden="true" tabindex="-1"></a>                phospho_SNpulse_minus_TSB, FDR,</span>
-<span id="cb8-238"><a href="#cb8-238" aria-hidden="true" tabindex="-1"></a>                total_SNpulse_minus_TSB, total_FDR, total_significant)</span>
-<span id="cb8-239"><a href="#cb8-239" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-240"><a href="#cb8-240" aria-hidden="true" tabindex="-1"></a>protein_comparison <span class="sc">|&gt;</span></span>
-<span id="cb8-241"><a href="#cb8-241" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb8-242"><a href="#cb8-242" aria-hidden="true" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Phosphosite versus total-protein DEA; positive values mean higher after exposure&quot;</span>)</span>
-<span id="cb8-243"><a href="#cb8-243" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb8-244"><a href="#cb8-244" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-245"><a href="#cb8-245" aria-hidden="true" tabindex="-1"></a>For the previously inspected results, total-protein abundance did not meet our significance criteria for RpoY or the 5′-nucleotidase family protein. **IsaA total protein decreased significantly**, whereas its S194 phosphosite-associated intensity increased. This opposing direction is an important observation; it does **not**, on its own, establish a quantitative change in phosphorylation occupancy or enzyme activity.</span>
-<span id="cb8-246"><a href="#cb8-246" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-247"><a href="#cb8-247" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Functional interpretation and next annotation steps</span></span>
-<span id="cb8-248"><a href="#cb8-248" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-249"><a href="#cb8-249" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> JE2 protein ID <span class="pp">|</span> UniProt annotation match <span class="pp">|</span> Phosphosite <span class="pp">|</span> Biological interpretation to investigate <span class="pp">|</span></span>
-<span id="cb8-250"><a href="#cb8-250" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span></span>
-<span id="cb8-251"><a href="#cb8-251" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG45570.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2FZG8 — RpoY</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2FZG8/entry)</span> <span class="pp">|</span> T21 <span class="pp">|</span> Reference annotation suggests an RNA polymerase subunit, potentially linking the protein to transcription; JE2 FASTA describes it as hypothetical. <span class="pp">|</span></span>
-<span id="cb8-252"><a href="#cb8-252" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG44844.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2G170 — 5′-nucleotidase family</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2G170/entry)</span> <span class="pp">|</span> S33 <span class="pp">|</span> Possible connection to nucleotide processing or metabolism; specific enzymatic function requires verification. <span class="pp">|</span></span>
-<span id="cb8-253"><a href="#cb8-253" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG47142.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2FV52 — IsaA</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2FV52/entry)</span> <span class="pp">|</span> S194 <span class="pp">|</span> Cell-wall remodeling/peptidoglycan-associated processes are plausible functional context. <span class="pp">|</span></span>
-<span id="cb8-254"><a href="#cb8-254" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-255"><a href="#cb8-255" aria-hidden="true" tabindex="-1"></a>These are protein-level annotations or research leads, **not demonstrated effects of phosphorylation at T21, S33 or S194**. We have not yet verified specific STRING association partners or site-specific functional evidence. Next, consult <span class="co">[</span><span class="ot">UniProt</span><span class="co">](https://www.uniprot.org/)</span> for curated function, location and site information, and <span class="co">[</span><span class="ot">STRING</span><span class="co">](https://string-db.org/)</span> for *S. aureus* functional associations (which do not necessarily represent direct physical interactions).</span>
-<span id="cb8-256"><a href="#cb8-256" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-257"><a href="#cb8-257" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.1 RpoY – RNA polymerase subunit epsilon</span></span>
-<span id="cb8-258"><a href="#cb8-258" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-259"><a href="#cb8-259" aria-hidden="true" tabindex="-1"></a><span class="fu">### RpoY — DNA-directed RNA polymerase subunit epsilon (Q2FZG8)</span></span>
-<span id="cb8-260"><a href="#cb8-260" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-261"><a href="#cb8-261" aria-hidden="true" tabindex="-1"></a>RpoY is a small (72 amino acids), non-essential component of bacterial RNA polymerase, which is involved in DNA-templated transcription. UniProt annotates DNA binding, RNA polymerase activity, and transcription as associated molecular functions and biological processes, based on computational UniRule annotations.</span>
-<span id="cb8-262"><a href="#cb8-262" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-263"><a href="#cb8-263" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to *P. aeruginosa* supernatant, the T21-containing phosphopeptide showed a significant decrease in abundance (log2FC for TSB vs. SNpulse = +2.43; FDR = 0.0033), while total RpoY protein abundance did not change significantly (FDR = 0.209).</span>
-<span id="cb8-264"><a href="#cb8-264" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-265"><a href="#cb8-265" aria-hidden="true" tabindex="-1"></a>This finding suggests a potential early phosphorylation-associated response involving the transcription machinery. However, UniProt does not annotate T21 as a known phosphorylation site, and its functional consequences remain unknown. Therefore, no direct conclusion about changes in RNA polymerase activity or transcription can be drawn.</span>
-<span id="cb8-266"><a href="#cb8-266" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-267"><a href="#cb8-267" aria-hidden="true" tabindex="-1"></a>STRING functional association analysis</span>
-<span id="cb8-268"><a href="#cb8-268" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-269"><a href="#cb8-269" aria-hidden="true" tabindex="-1"></a>STRING analysis using UniProt accession Q2FZG8 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD30156.1, a conserved hypothetical protein belonging to the UPF0356 family. The strongest functional associations were with RNA polymerase subunits RpoA (score 0.992), RpoB (0.932), RpoC (0.932), and RpoZ (0.932), as well as the sigma factor SigA (0.898). An additional association was identified with the RNA-processing enzyme Rnj1 (0.864).</span>
-<span id="cb8-270"><a href="#cb8-270" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-271"><a href="#cb8-271" aria-hidden="true" tabindex="-1"></a>These associations support the UniProt-based annotation of RpoY as a component of the bacterial transcription machinery, despite its hypothetical-protein designation in some databases.</span>
-<span id="cb8-272"><a href="#cb8-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-273"><a href="#cb8-273" aria-hidden="true" tabindex="-1"></a>The decreased T21 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore represent an early phosphorylation-associated change involving transcription-related machinery. However, STRING associations do not establish direct physical interactions or demonstrate that T21 phosphorylation alters transcriptional activity.</span>
-<span id="cb8-274"><a href="#cb8-274" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-275"><a href="#cb8-275" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.2 5′-Nucleotidase – lipoprotein e(P4) family (Q2G170)</span></span>
-<span id="cb8-276"><a href="#cb8-276" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-277"><a href="#cb8-277" aria-hidden="true" tabindex="-1"></a>The protein Q2G170 (JE2: ARG44844.1) is annotated as a member of the 5′-nucleotidase, lipoprotein e(P4) family. Proteins in this family may participate in nucleotide processing, although UniProt does not provide a specific experimentally supported functional description for this entry.</span>
-<span id="cb8-278"><a href="#cb8-278" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-279"><a href="#cb8-279" aria-hidden="true" tabindex="-1"></a>UniProt predicts a signal peptide at positions 1–31 and a mature protein chain at positions 32–296. The identified phosphorylation site, S33, is therefore located near the predicted N-terminus of the mature protein. A cell-envelope-associated localization is plausible, but has not been experimentally verified for this entry.</span>
-<span id="cb8-280"><a href="#cb8-280" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-281"><a href="#cb8-281" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to P. aeruginosa supernatant, the S33-containing phosphopeptide showed a significant increase in abundance (log2FC for TSB vs. SNpulse = −2.42; FDR = 0.0175), while total protein abundance did not change significantly (FDR = 0.776).</span>
-<span id="cb8-282"><a href="#cb8-282" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-283"><a href="#cb8-283" aria-hidden="true" tabindex="-1"></a>This observation may reflect an early phosphorylation-associated response involving a protein potentially associated with nucleotide metabolism or the cell envelope. The proximity of S33 to the predicted signal peptide cleavage site is noteworthy, but its functional significance remains unknown. UniProt does not annotate S33 as a known phosphorylation site, and no conclusion about altered enzymatic activity, processing, or phosphorylation occupancy can be drawn from these data alone.</span>
-<span id="cb8-284"><a href="#cb8-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-285"><a href="#cb8-285" aria-hidden="true" tabindex="-1"></a>STRING functional association analysis</span>
-<span id="cb8-286"><a href="#cb8-286" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-287"><a href="#cb8-287" aria-hidden="true" tabindex="-1"></a>STRING analysis using UniProt accession Q2G170 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD29455.1, annotated as a 5′-nucleotidase, lipoprotein e(P4) family protein.</span>
-<span id="cb8-288"><a href="#cb8-288" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-289"><a href="#cb8-289" aria-hidden="true" tabindex="-1"></a>Three predicted functional partners were identified: DeoD and DeoD-2, both annotated as purine nucleoside phosphorylases, and GuaB, an inosine 5′-monophosphate dehydrogenase involved in guanine nucleotide biosynthesis. All three associations had STRING confidence scores of 0.500 and were supported by text-mining evidence.</span>
-<span id="cb8-290"><a href="#cb8-290" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-291"><a href="#cb8-291" aria-hidden="true" tabindex="-1"></a>These findings suggest a possible functional connection to purine nucleotide metabolism, consistent with the protein-family annotation. However, the associations are not direct experimental evidence of enzymatic function or physical interaction.</span>
-<span id="cb8-292"><a href="#cb8-292" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-293"><a href="#cb8-293" aria-hidden="true" tabindex="-1"></a>The increased S33 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore involve a protein associated with nucleotide-related processes. Nevertheless, the functional consequence of S33 phosphorylation remains unknown, and no direct effect on nucleotide metabolism can be concluded.</span>
-<span id="cb8-294"><a href="#cb8-294" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-295"><a href="#cb8-295" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.3 IsaA – Transglycosylase (Q2FV52)</span></span>
-<span id="cb8-296"><a href="#cb8-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-211"><a href="#cb8-211" aria-hidden="true" tabindex="-1"></a>protein_identification <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-212"><a href="#cb8-212" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(je2_identification, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-213"><a href="#cb8-213" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">phosphosite =</span> <span class="fu">paste0</span>(residue, position)) <span class="sc">|&gt;</span></span>
+<span id="cb8-214"><a href="#cb8-214" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(je2_protein_id, staa8_uniprot, staa8_gene,</span>
+<span id="cb8-215"><a href="#cb8-215" aria-hidden="true" tabindex="-1"></a>                je2_fasta_annotation, phosphosite, je2_length_aa,</span>
+<span id="cb8-216"><a href="#cb8-216" aria-hidden="true" tabindex="-1"></a>                residue_matches, window_matches)</span>
+<span id="cb8-217"><a href="#cb8-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-218"><a href="#cb8-218" aria-hidden="true" tabindex="-1"></a>protein_identification <span class="sc">|&gt;</span></span>
+<span id="cb8-219"><a href="#cb8-219" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">&quot;Identification and JE2 FASTA sequence checks for significant sites&quot;</span>)</span>
+<span id="cb8-220"><a href="#cb8-220" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-221"><a href="#cb8-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-222"><a href="#cb8-222" aria-hidden="true" tabindex="-1"></a>In our initial verification, the three protein mappings were **ARG45570.1 → Q2FZG8 (RpoY)**, **ARG44844.1 → Q2G170 (5′-nucleotidase family)** and **ARG47142.1 → Q2FV52 (IsaA)**. The expected residues and 15-amino-acid sequence windows matched the JE2 FASTA. The JE2 entry for RpoY is labeled *hypothetical protein* but contains a BLAST match to the reference RpoY annotation. These sequence checks support consistent mapping, not independent experimental validation of phosphorylation localization.</span>
+<span id="cb8-223"><a href="#cb8-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-224"><a href="#cb8-224" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Compare phosphosite changes with total-protein changes</span></span>
+<span id="cb8-225"><a href="#cb8-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-226"><a href="#cb8-226" aria-hidden="true" tabindex="-1"></a>We use the **same 15-minute contrast** and observed total-proteomics DEA. For total-protein significance, we use the same FDR and fold-change thresholds; protein detection reliability can be assessed separately using Simona’s abundance-based criterion. Both DEA `diff` values are TSB minus SNpulse, so we reverse their signs below to make *positive* values mean higher abundance after exposure. A nonsignificant total-protein result is **not** proof of no protein-level change.</span>
+<span id="cb8-227"><a href="#cb8-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-230"><a href="#cb8-230" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb8-231"><a href="#cb8-231" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: total-protein-comparison</span></span>
+<span id="cb8-232"><a href="#cb8-232" aria-hidden="true" tabindex="-1"></a>total_15min <span class="ot">&lt;-</span> dea_total <span class="sc">|&gt;</span></span>
+<span id="cb8-233"><a href="#cb8-233" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(contrast <span class="sc">==</span> contrast_15min, estimate_type <span class="sc">==</span> <span class="st">&quot;observed&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-234"><a href="#cb8-234" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(protein_key, <span class="at">total_diff =</span> diff, <span class="at">total_FDR =</span> FDR)</span>
+<span id="cb8-235"><a href="#cb8-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-236"><a href="#cb8-236" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(total_15min<span class="sc">$</span>protein_key))</span>
+<span id="cb8-237"><a href="#cb8-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-238"><a href="#cb8-238" aria-hidden="true" tabindex="-1"></a>protein_comparison <span class="ot">&lt;-</span> significant_15min <span class="sc">|&gt;</span></span>
+<span id="cb8-239"><a href="#cb8-239" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(total_15min, <span class="at">by =</span> <span class="st">&quot;protein_key&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-240"><a href="#cb8-240" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb8-241"><a href="#cb8-241" aria-hidden="true" tabindex="-1"></a>    <span class="at">phosphosite =</span> <span class="fu">paste0</span>(residue, position),</span>
+<span id="cb8-242"><a href="#cb8-242" aria-hidden="true" tabindex="-1"></a>    <span class="at">phospho_SNpulse_minus_TSB =</span> <span class="sc">-</span>diff,</span>
+<span id="cb8-243"><a href="#cb8-243" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_SNpulse_minus_TSB =</span> <span class="sc">-</span>total_diff,</span>
+<span id="cb8-244"><a href="#cb8-244" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_significant =</span> <span class="sc">!</span><span class="fu">is.na</span>(total_FDR) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(total_diff) <span class="sc">&amp;</span></span>
+<span id="cb8-245"><a href="#cb8-245" aria-hidden="true" tabindex="-1"></a>      total_FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(total_diff) <span class="sc">&gt;</span> <span class="dv">1</span></span>
+<span id="cb8-246"><a href="#cb8-246" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-247"><a href="#cb8-247" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(staa8_uniprot, staa8_gene, phosphosite,</span>
+<span id="cb8-248"><a href="#cb8-248" aria-hidden="true" tabindex="-1"></a>                phospho_SNpulse_minus_TSB, FDR,</span>
+<span id="cb8-249"><a href="#cb8-249" aria-hidden="true" tabindex="-1"></a>                total_SNpulse_minus_TSB, total_FDR, total_significant)</span>
+<span id="cb8-250"><a href="#cb8-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-251"><a href="#cb8-251" aria-hidden="true" tabindex="-1"></a>protein_comparison <span class="sc">|&gt;</span></span>
+<span id="cb8-252"><a href="#cb8-252" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb8-253"><a href="#cb8-253" aria-hidden="true" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Phosphosite versus total-protein DEA; positive values mean higher after exposure&quot;</span>)</span>
+<span id="cb8-254"><a href="#cb8-254" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb8-255"><a href="#cb8-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-256"><a href="#cb8-256" aria-hidden="true" tabindex="-1"></a>For the previously inspected results, total-protein abundance did not meet our significance criteria for RpoY or the 5′-nucleotidase family protein. **IsaA total protein increased significantly**, as did its S194-containing phosphopeptide. The phosphopeptide increase may therefore be partly explained by increased IsaA abundance; the data do **not** establish a quantitative change in phosphorylation occupancy or enzyme activity.</span>
+<span id="cb8-257"><a href="#cb8-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-258"><a href="#cb8-258" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Functional interpretation and next annotation steps</span></span>
+<span id="cb8-259"><a href="#cb8-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-260"><a href="#cb8-260" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> JE2 protein ID <span class="pp">|</span> UniProt annotation match <span class="pp">|</span> Phosphosite <span class="pp">|</span> Biological interpretation to investigate <span class="pp">|</span></span>
+<span id="cb8-261"><a href="#cb8-261" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span>:--<span class="pp">|</span></span>
+<span id="cb8-262"><a href="#cb8-262" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG45570.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2FZG8 — RpoY</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2FZG8/entry)</span> <span class="pp">|</span> T21 <span class="pp">|</span> Reference annotation suggests an RNA polymerase subunit, potentially linking the protein to transcription; JE2 FASTA describes it as hypothetical. <span class="pp">|</span></span>
+<span id="cb8-263"><a href="#cb8-263" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG44844.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2G170 — 5′-nucleotidase family</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2G170/entry)</span> <span class="pp">|</span> S33 <span class="pp">|</span> Possible connection to nucleotide processing or metabolism; specific enzymatic function requires verification. <span class="pp">|</span></span>
+<span id="cb8-264"><a href="#cb8-264" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ARG47142.1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Q2FV52 — IsaA</span><span class="co">](https://www.uniprot.org/uniprotkb/Q2FV52/entry)</span> <span class="pp">|</span> S194 <span class="pp">|</span> Cell-wall remodeling/peptidoglycan-associated processes are plausible functional context. <span class="pp">|</span></span>
+<span id="cb8-265"><a href="#cb8-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-266"><a href="#cb8-266" aria-hidden="true" tabindex="-1"></a>These are protein-level annotations or research leads, **not demonstrated effects of phosphorylation at T21, S33 or S194**. The STRING associations discussed below provide functional context, not site-specific mechanistic evidence. For further verification, consult <span class="co">[</span><span class="ot">UniProt</span><span class="co">](https://www.uniprot.org/)</span> for curated function, location and site information, and <span class="co">[</span><span class="ot">STRING</span><span class="co">](https://string-db.org/)</span> for *S. aureus* functional associations (which do not necessarily represent direct physical interactions).</span>
+<span id="cb8-267"><a href="#cb8-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-268"><a href="#cb8-268" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.1 RpoY – RNA polymerase subunit epsilon</span></span>
+<span id="cb8-269"><a href="#cb8-269" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-270"><a href="#cb8-270" aria-hidden="true" tabindex="-1"></a>RpoY is a small (72 amino acids), non-essential component of bacterial RNA polymerase, which is involved in DNA-templated transcription. UniProt annotates DNA binding, RNA polymerase activity, and transcription as associated molecular functions and biological processes, based on computational UniRule annotations.</span>
+<span id="cb8-271"><a href="#cb8-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-272"><a href="#cb8-272" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to *P. aeruginosa* supernatant, the T21-containing phosphopeptide showed a significant decrease in abundance (log2FC for TSB vs. SNpulse = +2.43; FDR = 0.0033), while total RpoY protein abundance did not change significantly (FDR = 0.209).</span>
+<span id="cb8-273"><a href="#cb8-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-274"><a href="#cb8-274" aria-hidden="true" tabindex="-1"></a>This finding suggests a potential early phosphorylation-associated response involving the transcription machinery. However, UniProt does not annotate T21 as a known phosphorylation site, and its functional consequences remain unknown. Therefore, no direct conclusion about changes in RNA polymerase activity or transcription can be drawn.</span>
+<span id="cb8-275"><a href="#cb8-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-276"><a href="#cb8-276" aria-hidden="true" tabindex="-1"></a><span class="fu">#### STRING functional association analysis</span></span>
+<span id="cb8-277"><a href="#cb8-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-278"><a href="#cb8-278" aria-hidden="true" tabindex="-1"></a>STRING analysis using UniProt accession Q2FZG8 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD30156.1, a conserved hypothetical protein belonging to the UPF0356 family. The strongest functional associations were with RNA polymerase subunits RpoA (score 0.992), RpoB (0.932), RpoC (0.932), and RpoZ (0.932), as well as the sigma factor SigA (0.898). An additional association was identified with the RNA-processing enzyme Rnj1 (0.864).</span>
+<span id="cb8-279"><a href="#cb8-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-280"><a href="#cb8-280" aria-hidden="true" tabindex="-1"></a>These associations support the UniProt-based annotation of RpoY as a component of the bacterial transcription machinery, despite its hypothetical-protein designation in some databases.</span>
+<span id="cb8-281"><a href="#cb8-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-282"><a href="#cb8-282" aria-hidden="true" tabindex="-1"></a>The decreased T21 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore represent an early phosphorylation-associated change involving transcription-related machinery. However, STRING associations do not establish direct physical interactions or demonstrate that T21 phosphorylation alters transcriptional activity.</span>
+<span id="cb8-283"><a href="#cb8-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-284"><a href="#cb8-284" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.2 5′-Nucleotidase – lipoprotein e(P4) family (Q2G170)</span></span>
+<span id="cb8-285"><a href="#cb8-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-286"><a href="#cb8-286" aria-hidden="true" tabindex="-1"></a>The protein Q2G170 (JE2: ARG44844.1) is annotated as a member of the 5′-nucleotidase, lipoprotein e(P4) family. Proteins in this family may participate in nucleotide processing, although UniProt does not provide a specific experimentally supported functional description for this entry.</span>
+<span id="cb8-287"><a href="#cb8-287" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-288"><a href="#cb8-288" aria-hidden="true" tabindex="-1"></a>UniProt predicts a signal peptide at positions 1–31 and a mature protein chain at positions 32–296. The identified phosphorylation site, S33, is therefore located near the predicted N-terminus of the mature protein. A cell-envelope-associated localization is plausible, but has not been experimentally verified for this entry.</span>
+<span id="cb8-289"><a href="#cb8-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-290"><a href="#cb8-290" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to P. aeruginosa supernatant, the S33-containing phosphopeptide showed a significant increase in abundance (log2FC for TSB vs. SNpulse = −2.42; FDR = 0.0175), while total protein abundance did not change significantly (FDR = 0.776).</span>
+<span id="cb8-291"><a href="#cb8-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-292"><a href="#cb8-292" aria-hidden="true" tabindex="-1"></a>This observation may reflect an early phosphorylation-associated response involving a protein potentially associated with nucleotide metabolism or the cell envelope. The proximity of S33 to the predicted signal peptide cleavage site is noteworthy, but its functional significance remains unknown. UniProt does not annotate S33 as a known phosphorylation site, and no conclusion about altered enzymatic activity, processing, or phosphorylation occupancy can be drawn from these data alone.</span>
+<span id="cb8-293"><a href="#cb8-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-294"><a href="#cb8-294" aria-hidden="true" tabindex="-1"></a><span class="fu">#### STRING functional association analysis</span></span>
+<span id="cb8-295"><a href="#cb8-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-296"><a href="#cb8-296" aria-hidden="true" tabindex="-1"></a>STRING analysis using UniProt accession Q2G170 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD29455.1, annotated as a 5′-nucleotidase, lipoprotein e(P4) family protein.</span>
 <span id="cb8-297"><a href="#cb8-297" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-298"><a href="#cb8-298" aria-hidden="true" tabindex="-1"></a>IsaA (JE2: ARG47142.1) is a secreted peptidoglycan-cleaving enzyme involved in bacterial cell-wall degradation and remodeling. UniProt annotates hydrolase activity acting on glycosyl bonds and participation in peptidoglycan catabolism, supported by published research. Studies involving IsaA and the related protein SceD also indicate roles in bacterial cell separation, clumping, and virulence.</span>
+<span id="cb8-298"><a href="#cb8-298" aria-hidden="true" tabindex="-1"></a>Three predicted functional partners were identified: DeoD and DeoD-2, both annotated as purine nucleoside phosphorylases, and GuaB, an inosine 5′-monophosphate dehydrogenase involved in guanine nucleotide biosynthesis. All three associations had STRING confidence scores of 0.500 and were supported by text-mining evidence.</span>
 <span id="cb8-299"><a href="#cb8-299" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-300"><a href="#cb8-300" aria-hidden="true" tabindex="-1"></a>IsaA contains a signal peptide at positions 1–29, followed by the mature protein chain (30–233). The identified phosphorylation site S194 is located within the mature protein. UniProt does not list S194 as an annotated phosphorylation site.</span>
+<span id="cb8-300"><a href="#cb8-300" aria-hidden="true" tabindex="-1"></a>These findings suggest a possible functional connection to purine nucleotide metabolism, consistent with the protein-family annotation. However, the associations are not direct experimental evidence of enzymatic function or physical interaction.</span>
 <span id="cb8-301"><a href="#cb8-301" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-302"><a href="#cb8-302" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to P. aeruginosa supernatant, the S194-containing phosphopeptide increased significantly (log2FC for TSB vs. SNpulse = −2.80; FDR = 0.0320), whereas total IsaA protein abundance decreased significantly (log2FC for TSB vs. SNpulse = +1.87; FDR ≈ 6.75 × 10⁻⁸).</span>
+<span id="cb8-302"><a href="#cb8-302" aria-hidden="true" tabindex="-1"></a>The increased S33 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore involve a protein associated with nucleotide-related processes. Nevertheless, the functional consequence of S33 phosphorylation remains unknown, and no direct effect on nucleotide metabolism can be concluded.</span>
 <span id="cb8-303"><a href="#cb8-303" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-304"><a href="#cb8-304" aria-hidden="true" tabindex="-1"></a>The opposing changes in phosphopeptide and total protein abundance suggest a phosphorylation-associated response that cannot be explained simply by increased total IsaA abundance. Given IsaA&#39;s role in peptidoglycan cleavage, this may be relevant to cell-wall remodeling during early exposure. However, the functional effect of S194 phosphorylation remains unknown, and the data do not directly establish altered enzymatic activity, secretion, or phosphorylation occupancy.</span>
+<span id="cb8-304"><a href="#cb8-304" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.3 IsaA – Peptidoglycan hydrolase (Q2FV52)</span></span>
 <span id="cb8-305"><a href="#cb8-305" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-306"><a href="#cb8-306" aria-hidden="true" tabindex="-1"></a>STRING functional association analysis</span>
-<span id="cb8-307"><a href="#cb8-307" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-308"><a href="#cb8-308" aria-hidden="true" tabindex="-1"></a>STRING analysis of IsaA in Staphylococcus aureus NCTC 8325 identified functional associations with several proteins involved in cell-wall remodeling and cell division. The highest-scoring partners included the autolysin Atl (score 0.760), the LysM-domain protein SsaA (0.694), and the peptidoglycan hydrolase LytM (0.580). Additional associations included the cell-division proteins FtsL (0.536) and EzrA (0.531).</span>
-<span id="cb8-309"><a href="#cb8-309" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-310"><a href="#cb8-310" aria-hidden="true" tabindex="-1"></a>These associations support a functional context for IsaA involving peptidoglycan metabolism and cell division, consistent with its experimentally supported peptidoglycan-cleaving activity.</span>
-<span id="cb8-311"><a href="#cb8-311" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-312"><a href="#cb8-312" aria-hidden="true" tabindex="-1"></a>The significant increase in the S194 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure, together with the significant decrease in total IsaA abundance, may therefore reflect an early response involving cell-wall-associated processes. However, STRING associations do not establish direct physical interactions or phosphorylation-dependent regulation, and the functional consequence of S194 phosphorylation remains unknown.</span>
-<span id="cb8-313"><a href="#cb8-313" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-314"><a href="#cb8-314" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.4 Comparison of biological processes</span></span>
-<span id="cb8-315"><a href="#cb8-315" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-316"><a href="#cb8-316" aria-hidden="true" tabindex="-1"></a>The three proteins containing significantly altered phosphosites after 15 minutes of P. aeruginosa supernatant exposure are associated with distinct biological functions.</span>
-<span id="cb8-317"><a href="#cb8-317" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-318"><a href="#cb8-318" aria-hidden="true" tabindex="-1"></a>RpoY is annotated as a non-essential subunit of bacterial RNA polymerase and is therefore associated with DNA-templated transcription. The 5′-nucleotidase, lipoprotein e(P4) family protein has a less well-characterized function, with possible involvement in nucleotide processing and cell-envelope-associated processes. IsaA is a secreted peptidoglycan-cleaving enzyme involved in cell-wall degradation and remodeling, supported by published experimental research.</span>
-<span id="cb8-319"><a href="#cb8-319" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-320"><a href="#cb8-320" aria-hidden="true" tabindex="-1"></a>The phosphopeptide-associated signal decreased for RpoY T21 but increased for the 5′-nucleotidase-family protein S33 and IsaA S194. Total-proteomics comparison showed no statistically significant abundance changes for RpoY or the 5′-nucleotidase-family protein, whereas total IsaA abundance decreased significantly despite an increase in its S194 phosphopeptide signal.</span>
-<span id="cb8-321"><a href="#cb8-321" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-322"><a href="#cb8-322" aria-hidden="true" tabindex="-1"></a>Together, these findings indicate that the early phosphoproteomics response involves proteins associated with different cellular processes rather than one clearly defined pathway. The results provide potential links to transcription, nucleotide-related functions, and cell-wall remodeling, but do not establish altered protein activity or phosphorylation occupancy.</span>
-<span id="cb8-323"><a href="#cb8-323" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-324"><a href="#cb8-324" aria-hidden="true" tabindex="-1"></a>Because only three phosphosites met the statistical criteria, no pathway enrichment or coordinated functional response can be inferred from these proteins alone. The biological significance of the individual phosphorylation events remains to be established.</span>
-<span id="cb8-325"><a href="#cb8-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-306"><a href="#cb8-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-307"><a href="#cb8-307" aria-hidden="true" tabindex="-1"></a>IsaA (JE2: ARG47142.1) is a secreted peptidoglycan-cleaving enzyme involved in bacterial cell-wall degradation and remodeling. UniProt annotates hydrolase activity acting on glycosyl bonds and participation in peptidoglycan catabolism, supported by published research. Studies involving IsaA and the related protein SceD also indicate roles in bacterial cell separation, clumping, and virulence.</span>
+<span id="cb8-308"><a href="#cb8-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-309"><a href="#cb8-309" aria-hidden="true" tabindex="-1"></a>IsaA contains a signal peptide at positions 1–29, followed by the mature protein chain (30–233). The identified phosphorylation site S194 is located within the mature protein. UniProt does not list S194 as an annotated phosphorylation site.</span>
+<span id="cb8-310"><a href="#cb8-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-311"><a href="#cb8-311" aria-hidden="true" tabindex="-1"></a>After 15 minutes of exposure to P. aeruginosa supernatant, the S194-containing phosphopeptide increased significantly (log2FC for TSB vs. SNpulse = −2.80; FDR = 0.0320), and total IsaA protein abundance also increased significantly (log2FC for TSB vs. SNpulse = −1.87; FDR ≈ 6.75 × 10⁻⁸).</span>
+<span id="cb8-312"><a href="#cb8-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-313"><a href="#cb8-313" aria-hidden="true" tabindex="-1"></a>Because both phosphopeptide and total protein abundance increased, the higher S194 phosphopeptide signal may be partly explained by increased total IsaA abundance. Given IsaA&#39;s role in peptidoglycan cleavage, this may be relevant to cell-wall remodeling during early exposure. However, the functional effect of S194 phosphorylation remains unknown, and the data do not directly establish altered enzymatic activity, secretion, or phosphorylation occupancy.</span>
+<span id="cb8-314"><a href="#cb8-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-315"><a href="#cb8-315" aria-hidden="true" tabindex="-1"></a><span class="fu">#### STRING functional association analysis</span></span>
+<span id="cb8-316"><a href="#cb8-316" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-317"><a href="#cb8-317" aria-hidden="true" tabindex="-1"></a>STRING analysis of IsaA in Staphylococcus aureus NCTC 8325 identified functional associations with several proteins involved in cell-wall remodeling and cell division. The highest-scoring partners included the autolysin Atl (score 0.760), the LysM-domain protein SsaA (0.694), and the peptidoglycan hydrolase LytM (0.580). Additional associations included the cell-division proteins FtsL (0.536) and EzrA (0.531).</span>
+<span id="cb8-318"><a href="#cb8-318" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-319"><a href="#cb8-319" aria-hidden="true" tabindex="-1"></a>These associations support a functional context for IsaA involving peptidoglycan metabolism and cell division, consistent with its experimentally supported peptidoglycan-cleaving activity.</span>
+<span id="cb8-320"><a href="#cb8-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-321"><a href="#cb8-321" aria-hidden="true" tabindex="-1"></a>The significant increase in the S194 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure, together with the significant increase in total IsaA abundance, may therefore reflect an early response involving cell-wall-associated processes. However, STRING associations do not establish direct physical interactions or phosphorylation-dependent regulation, and the functional consequence of S194 phosphorylation remains unknown.</span>
+<span id="cb8-322"><a href="#cb8-322" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-323"><a href="#cb8-323" aria-hidden="true" tabindex="-1"></a><span class="fu">### 8.4 Comparison of biological processes</span></span>
+<span id="cb8-324"><a href="#cb8-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-325"><a href="#cb8-325" aria-hidden="true" tabindex="-1"></a>The three proteins containing significantly altered phosphosites after 15 minutes of P. aeruginosa supernatant exposure are associated with distinct biological functions.</span>
 <span id="cb8-326"><a href="#cb8-326" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-327"><a href="#cb8-327" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-328"><a href="#cb8-328" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Interim conclusion</span></span>
-<span id="cb8-329"><a href="#cb8-329" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-330"><a href="#cb8-330" aria-hidden="true" tabindex="-1"></a>The observed course DEA identifies three phosphosites meeting FDR &lt; 0.05 and |log2FC| &gt; 1 after 15 minutes of exposure. RpoY T21 shows a lower phosphosite-associated signal after exposure, while the 5′-nucleotidase-family S33 and IsaA S194 show higher signals. All three sites map uniquely to entries in the JE2 protein FASTA, with matching expected residues and local sequence windows. Comparing against total proteomics reveals that IsaA S194 and total IsaA abundance change in opposite directions. These findings motivate investigation of transcription, nucleotide-related processes and cell-wall biology, but do not demonstrate altered protein activity or phosphorylation occupancy. Functional annotation and mechanistic interpretation remain to be completed.</span>
+<span id="cb8-327"><a href="#cb8-327" aria-hidden="true" tabindex="-1"></a>RpoY is annotated as a non-essential subunit of bacterial RNA polymerase and is therefore associated with DNA-templated transcription. The 5′-nucleotidase, lipoprotein e(P4) family protein has a less well-characterized function, with possible involvement in nucleotide processing and cell-envelope-associated processes. IsaA is a secreted peptidoglycan-cleaving enzyme involved in cell-wall degradation and remodeling, supported by published experimental research.</span>
+<span id="cb8-328"><a href="#cb8-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-329"><a href="#cb8-329" aria-hidden="true" tabindex="-1"></a>The phosphopeptide-associated signal decreased for RpoY T21 but increased for the 5′-nucleotidase-family protein S33 and IsaA S194. Total-proteomics comparison showed no statistically significant abundance changes for RpoY or the 5′-nucleotidase-family protein, whereas total IsaA abundance increased significantly alongside its S194 phosphopeptide signal.</span>
+<span id="cb8-330"><a href="#cb8-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-331"><a href="#cb8-331" aria-hidden="true" tabindex="-1"></a>Together, these findings indicate that the early phosphoproteomics response involves proteins associated with different cellular processes rather than one clearly defined pathway. The results provide potential links to transcription, nucleotide-related functions, and cell-wall remodeling, but do not establish altered protein activity or phosphorylation occupancy.</span>
+<span id="cb8-332"><a href="#cb8-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-333"><a href="#cb8-333" aria-hidden="true" tabindex="-1"></a>Because only three phosphosites met the statistical criteria, no pathway enrichment or coordinated functional response can be inferred from these proteins alone. The biological significance of the individual phosphorylation events remains to be established.</span>
+<span id="cb8-334"><a href="#cb8-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-335"><a href="#cb8-335" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-336"><a href="#cb8-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-337"><a href="#cb8-337" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Interim conclusion</span></span>
+<span id="cb8-338"><a href="#cb8-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-339"><a href="#cb8-339" aria-hidden="true" tabindex="-1"></a>The course DEA, filtered to observed estimates with detection in at least 2 of 3 replicates per condition, identifies three phosphosites meeting FDR &lt; 0.05 and |log2FC| &gt; 1 after 15 minutes of exposure. RpoY T21 shows a lower phosphosite-associated signal after exposure, while the 5′-nucleotidase-family S33 and IsaA S194 show higher signals. All three sites map uniquely to entries in the JE2 protein FASTA, with matching expected residues and local sequence windows. Comparing against total proteomics reveals that both the IsaA S194 phosphopeptide and total IsaA abundance increase, so the phosphopeptide change cannot be interpreted as a change in phosphorylation occupancy. These findings motivate investigation of transcription, nucleotide-related processes and cell-wall biology, but do not demonstrate altered protein activity or phosphorylation occupancy. Functional annotation and mechanistic interpretation remain to be completed.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
