@@ -1,6 +1,320 @@
 ---
-title: "01_15min_changed_phospho_sites"
-format: html
+title: "Topic 2 – Early phosphorylation response"
+subtitle: "BIO253 HS2026 · S. aureus JE2 · 15-minute P. aeruginosa supernatant exposure"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
 ---
 
-test
+## 1. Research question
+
+Which proteins show significant changes in phosphorylation after 15 minutes of exposure to *Pseudomonas aeruginosa* supernatant, and which biological processes are they involved in?
+
+## 2. Hypothesis
+
+Proteins involved in translation, metabolism, and stress responses may exhibit altered phosphorylation after 15 minutes of supernatant exposure. This is a hypothesis to evaluate, not a restriction on which processes can be identified.
+
+## 3. Data, contrast and statistical criteria
+
+We use the course-provided phosphoproteomics differential expression analysis (DEA) for ancestral *Staphylococcus aureus* JE2 (`anc`), comparing TSB control with 15-minute supernatant exposure (`SNpulse`). We retain observed estimates with FDR < 0.05 and |log2 fold change| > 1. We do **not** apply an additional 2-of-3-replicate detection filter to the DEA here. The course contrast `TSB_vs_SNpulse_at_anc` is **TSB minus SNpulse**: a negative `diff` means higher abundance after exposure.
+
+```{r}
+#| label: setup
+setup_path <- if (file.exists("../../R/setup.R")) {
+  "../../R/setup.R"
+} else if (file.exists("R/setup.R")) {
+  "R/setup.R"
+} else {
+  stop("Cannot locate R/setup.R; check the Quarto working directory.")
+}
+source(setup_path)
+
+dea_phospho <- read_dea("phospho_STYH")
+sites_raw <- read_sites("STYH")
+dea_total <- read_dea("total")
+```
+
+## 4. Significant phosphosites after 15 minutes
+
+```{r}
+#| label: significant-sites
+contrast_15min <- "TSB_vs_SNpulse_at_anc"
+
+phospho_15min <- dea_phospho |>
+  dplyr::filter(contrast == contrast_15min, estimate_type == "observed")
+
+significant_15min <- phospho_15min |>
+  dplyr::filter(!is.na(FDR), !is.na(diff), FDR < 0.05, abs(diff) > 1) |>
+  dplyr::select(site_id, protein_key, staa8_gene, staa8_uniprot,
+                product, residue, position, SequenceWindow, diff, FDR) |>
+  dplyr::arrange(FDR)
+
+stopifnot(!anyDuplicated(significant_15min$site_id))
+
+significant_15min |>
+  dplyr::mutate(
+    site = paste0(residue, position),
+    SNpulse_minus_TSB = -diff,
+    exposure_direction = dplyr::if_else(
+      SNpulse_minus_TSB > 0, "Higher after 15 min", "Lower after 15 min"
+    )
+  ) |>
+  dplyr::select(site_id, staa8_gene, staa8_uniprot, product,
+                site, SequenceWindow, SNpulse_minus_TSB, FDR, exposure_direction) |>
+  knitr::kable(digits = 3, caption = "Significant observed phosphosites (exposure minus control direction)")
+
+significant_15min |>
+  dplyr::summarise(
+    significant_sites = dplyr::n(),
+    distinct_proteins = dplyr::n_distinct(protein_key)
+  ) |>
+  knitr::kable(caption = "Number of significant sites and associated proteins")
+```
+
+## 5. Check detection and direction using measured phosphosite intensities
+
+Raw log2 intensity means provide a direction check; they are not equivalent to modeled DEA effects or phosphorylation occupancy.
+
+```{r}
+#| label: site-intensities
+site_intensity <- sites_raw |>
+  dplyr::filter(
+    genotype == "anc", medium %in% c("TSB", "SNpulse"),
+    site_id %in% significant_15min$site_id
+  ) |>
+  dplyr::group_by(site_id, medium) |>
+  dplyr::summarise(
+    n_detected = sum(!is.na(log2_intensity)),
+    mean_log2_intensity = if (all(is.na(log2_intensity))) NA_real_
+      else mean(log2_intensity, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+site_intensity |>
+  knitr::kable(digits = 2, caption = "Raw phosphosite intensity and replicate detection")
+
+intensity_wide <- site_intensity |>
+  tidyr::pivot_wider(
+    names_from = medium,
+    values_from = c(n_detected, mean_log2_intensity)
+  )
+
+direction_check <- significant_15min |>
+  dplyr::left_join(intensity_wide, by = "site_id") |>
+  dplyr::mutate(
+    raw_SNpulse_minus_TSB = mean_log2_intensity_SNpulse - mean_log2_intensity_TSB,
+    DEA_SNpulse_minus_TSB = -diff
+  ) |>
+  dplyr::select(staa8_uniprot, residue, position,
+                n_detected_TSB, n_detected_SNpulse,
+                mean_log2_intensity_TSB, mean_log2_intensity_SNpulse,
+                raw_SNpulse_minus_TSB, DEA_SNpulse_minus_TSB, FDR)
+
+direction_check |>
+  knitr::kable(digits = 2, caption = "Detection and raw versus modeled direction of change")
+```
+
+## 6. Identify the proteins in the JE2 reference FASTA
+
+The experiment-specific protein IDs can be recovered from the `site_id` and matched to the **JE2-specific** FASTA at `data/raw/resources/JE2_proteins.fasta`. This FASTA includes BLAST-based UniProt reference annotations in its headers. These are annotation matches, not proof that sequences are identical across strains.
+
+```{r}
+#| label: je2-protein-identification
+# Biostrings was installed previously; no package installation during rendering.
+if (!requireNamespace("Biostrings", quietly = TRUE)) {
+  stop("Install Biostrings once using BiocManager::install('Biostrings').")
+}
+
+# Resolve path from the project root or a .qmd two folders below it.
+fasta_candidates <- c(
+  "data/raw/resources/JE2_proteins.fasta",
+  "../../data/raw/resources/JE2_proteins.fasta"
+)
+fasta_found <- fasta_candidates[file.exists(fasta_candidates)]
+if (length(fasta_found) == 0L) {
+  stop("JE2_proteins.fasta not found. Check its location under data/raw/resources/.")
+}
+
+je2_proteins <- Biostrings::readAAStringSet(fasta_found[1])
+je2_headers <- names(je2_proteins)
+
+# Find the unique FASTA entry using the exact JE2 experimental protein ID.
+identify_je2 <- function(site_id, expected_residue, position, sequence_window) {
+  # e.g. lcl_CP020619.1_prot_ARG45570.1_1104_T21 -> ARG45570.1
+  je2_id <- sub("^.*_prot_(ARG[0-9]+\\.[0-9]+)_[0-9]+_[A-Z][0-9]+$", "\\1", site_id)
+  if (!grepl("^ARG[0-9]+\\.[0-9]+$", je2_id)) {
+    stop("Cannot parse JE2 protein ID from site: ", site_id)
+  }
+  hits <- grep(paste0("[protein_id=", je2_id, "]"), je2_headers, fixed = TRUE)
+  if (length(hits) != 1L) {
+    stop("Expected exactly one JE2 FASTA match for ", je2_id,
+         "; found ", length(hits))
+  }
+  header <- je2_headers[hits]
+  seq <- as.character(je2_proteins[[hits]])
+  pos <- as.integer(position)
+  actual <- if (pos >= 1L && pos <= nchar(seq)) substr(seq, pos, pos) else NA_character_
+  window <- if (!is.na(actual)) {
+    substr(seq, max(1L, pos - 7L), min(nchar(seq), pos + 7L))
+  } else NA_character_
+  annotation <- if (grepl("[protein=", header, fixed = TRUE)) {
+    sub("^.*\\[protein=([^]]+)\\].*$", "\\1", header)
+  } else NA_character_
+  data.frame(
+    site_id = site_id,
+    je2_protein_id = je2_id,
+    je2_fasta_annotation = annotation,
+    je2_length_aa = nchar(seq),
+    je2_residue = actual,
+    residue_matches = !is.na(actual) && actual == expected_residue,
+    je2_sequence_window = window,
+    window_matches = !is.na(window) && !is.na(sequence_window) &&
+      window == sequence_window,
+    stringsAsFactors = FALSE
+  )
+}
+
+je2_identification <- dplyr::bind_rows(lapply(
+  seq_len(nrow(significant_15min)),
+  function(i) identify_je2(
+    significant_15min$site_id[i],
+    significant_15min$residue[i],
+    significant_15min$position[i],
+    significant_15min$SequenceWindow[i]
+  )
+))
+
+protein_identification <- significant_15min |>
+  dplyr::left_join(je2_identification, by = "site_id") |>
+  dplyr::mutate(phosphosite = paste0(residue, position)) |>
+  dplyr::select(je2_protein_id, staa8_uniprot, staa8_gene,
+                je2_fasta_annotation, phosphosite, je2_length_aa,
+                residue_matches, window_matches)
+
+protein_identification |>
+  knitr::kable(caption = "Identification and JE2 FASTA sequence checks for significant sites")
+```
+
+In our initial verification, the three protein mappings were **ARG45570.1 → Q2FZG8 (RpoY)**, **ARG44844.1 → Q2G170 (5′-nucleotidase family)** and **ARG47142.1 → Q2FV52 (IsaA)**. The expected residues and 15-amino-acid sequence windows matched the JE2 FASTA. The JE2 entry for RpoY is labeled *hypothetical protein* but contains a BLAST match to the reference RpoY annotation. These sequence checks support consistent mapping, not independent experimental validation of phosphorylation localization.
+
+## 7. Compare phosphosite changes with total-protein changes
+
+We use the **same 15-minute contrast** and observed total-proteomics DEA. Both DEA `diff` values are TSB minus SNpulse, so we reverse their signs below to make *positive* values mean higher abundance after exposure. A nonsignificant total-protein result is **not** proof of no protein-level change.
+
+```{r}
+#| label: total-protein-comparison
+total_15min <- dea_total |>
+  dplyr::filter(contrast == contrast_15min, estimate_type == "observed") |>
+  dplyr::select(protein_key, total_diff = diff, total_FDR = FDR)
+
+stopifnot(!anyDuplicated(total_15min$protein_key))
+
+protein_comparison <- significant_15min |>
+  dplyr::left_join(total_15min, by = "protein_key") |>
+  dplyr::mutate(
+    phosphosite = paste0(residue, position),
+    phospho_SNpulse_minus_TSB = -diff,
+    total_SNpulse_minus_TSB = -total_diff,
+    total_significant = !is.na(total_FDR) & !is.na(total_diff) &
+      total_FDR < 0.05 & abs(total_diff) > 1
+  ) |>
+  dplyr::select(staa8_uniprot, staa8_gene, phosphosite,
+                phospho_SNpulse_minus_TSB, FDR,
+                total_SNpulse_minus_TSB, total_FDR, total_significant)
+
+protein_comparison |>
+  knitr::kable(digits = 3,
+               caption = "Phosphosite versus total-protein DEA; positive values mean higher after exposure")
+```
+
+For the previously inspected results, total-protein abundance did not meet our significance criteria for RpoY or the 5′-nucleotidase family protein. **IsaA total protein decreased significantly**, whereas its S194 phosphosite-associated intensity increased. This opposing direction is an important observation; it does **not**, on its own, establish a quantitative change in phosphorylation occupancy or enzyme activity.
+
+## 8. Functional interpretation and next annotation steps
+
+| JE2 protein ID | UniProt annotation match | Phosphosite | Biological interpretation to investigate |
+|:--|:--|:--|:--|
+| ARG45570.1 | [Q2FZG8 — RpoY](https://www.uniprot.org/uniprotkb/Q2FZG8/entry) | T21 | Reference annotation suggests an RNA polymerase subunit, potentially linking the protein to transcription; JE2 FASTA describes it as hypothetical. |
+| ARG44844.1 | [Q2G170 — 5′-nucleotidase family](https://www.uniprot.org/uniprotkb/Q2G170/entry) | S33 | Possible connection to nucleotide processing or metabolism; specific enzymatic function requires verification. |
+| ARG47142.1 | [Q2FV52 — IsaA](https://www.uniprot.org/uniprotkb/Q2FV52/entry) | S194 | Cell-wall remodeling/peptidoglycan-associated processes are plausible functional context. |
+
+These are protein-level annotations or research leads, **not demonstrated effects of phosphorylation at T21, S33 or S194**. We have not yet verified specific STRING association partners or site-specific functional evidence. Next, consult [UniProt](https://www.uniprot.org/) for curated function, location and site information, and [STRING](https://string-db.org/) for *S. aureus* functional associations (which do not necessarily represent direct physical interactions).
+
+### 8.1 RpoY – RNA polymerase subunit epsilon
+
+### RpoY — DNA-directed RNA polymerase subunit epsilon (Q2FZG8)
+
+RpoY is a small (72 amino acids), non-essential component of bacterial RNA polymerase, which is involved in DNA-templated transcription. UniProt annotates DNA binding, RNA polymerase activity, and transcription as associated molecular functions and biological processes, based on computational UniRule annotations.
+
+After 15 minutes of exposure to *P. aeruginosa* supernatant, the T21-containing phosphopeptide showed a significant decrease in abundance (log2FC for TSB vs. SNpulse = +2.43; FDR = 0.0033), while total RpoY protein abundance did not change significantly (FDR = 0.209).
+
+This finding suggests a potential early phosphorylation-associated response involving the transcription machinery. However, UniProt does not annotate T21 as a known phosphorylation site, and its functional consequences remain unknown. Therefore, no direct conclusion about changes in RNA polymerase activity or transcription can be drawn.
+
+STRING functional association analysis
+
+STRING analysis using UniProt accession Q2FZG8 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD30156.1, a conserved hypothetical protein belonging to the UPF0356 family. The strongest functional associations were with RNA polymerase subunits RpoA (score 0.992), RpoB (0.932), RpoC (0.932), and RpoZ (0.932), as well as the sigma factor SigA (0.898). An additional association was identified with the RNA-processing enzyme Rnj1 (0.864).
+
+These associations support the UniProt-based annotation of RpoY as a component of the bacterial transcription machinery, despite its hypothetical-protein designation in some databases.
+
+The decreased T21 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore represent an early phosphorylation-associated change involving transcription-related machinery. However, STRING associations do not establish direct physical interactions or demonstrate that T21 phosphorylation alters transcriptional activity.
+
+### 8.2 5′-Nucleotidase – lipoprotein e(P4) family (Q2G170)
+
+The protein Q2G170 (JE2: ARG44844.1) is annotated as a member of the 5′-nucleotidase, lipoprotein e(P4) family. Proteins in this family may participate in nucleotide processing, although UniProt does not provide a specific experimentally supported functional description for this entry.
+
+UniProt predicts a signal peptide at positions 1–31 and a mature protein chain at positions 32–296. The identified phosphorylation site, S33, is therefore located near the predicted N-terminus of the mature protein. A cell-envelope-associated localization is plausible, but has not been experimentally verified for this entry.
+
+After 15 minutes of exposure to P. aeruginosa supernatant, the S33-containing phosphopeptide showed a significant increase in abundance (log2FC for TSB vs. SNpulse = −2.42; FDR = 0.0175), while total protein abundance did not change significantly (FDR = 0.776).
+
+This observation may reflect an early phosphorylation-associated response involving a protein potentially associated with nucleotide metabolism or the cell envelope. The proximity of S33 to the predicted signal peptide cleavage site is noteworthy, but its functional significance remains unknown. UniProt does not annotate S33 as a known phosphorylation site, and no conclusion about altered enzymatic activity, processing, or phosphorylation occupancy can be drawn from these data alone.
+
+STRING functional association analysis
+
+STRING analysis using UniProt accession Q2G170 in Staphylococcus aureus NCTC 8325 identified the corresponding protein as ABD29455.1, annotated as a 5′-nucleotidase, lipoprotein e(P4) family protein.
+
+Three predicted functional partners were identified: DeoD and DeoD-2, both annotated as purine nucleoside phosphorylases, and GuaB, an inosine 5′-monophosphate dehydrogenase involved in guanine nucleotide biosynthesis. All three associations had STRING confidence scores of 0.500 and were supported by text-mining evidence.
+
+These findings suggest a possible functional connection to purine nucleotide metabolism, consistent with the protein-family annotation. However, the associations are not direct experimental evidence of enzymatic function or physical interaction.
+
+The increased S33 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure may therefore involve a protein associated with nucleotide-related processes. Nevertheless, the functional consequence of S33 phosphorylation remains unknown, and no direct effect on nucleotide metabolism can be concluded.
+
+### 8.3 IsaA – Transglycosylase (Q2FV52)
+
+
+IsaA (JE2: ARG47142.1) is a secreted peptidoglycan-cleaving enzyme involved in bacterial cell-wall degradation and remodeling. UniProt annotates hydrolase activity acting on glycosyl bonds and participation in peptidoglycan catabolism, supported by published research. Studies involving IsaA and the related protein SceD also indicate roles in bacterial cell separation, clumping, and virulence.
+
+IsaA contains a signal peptide at positions 1–29, followed by the mature protein chain (30–233). The identified phosphorylation site S194 is located within the mature protein. UniProt does not list S194 as an annotated phosphorylation site.
+
+After 15 minutes of exposure to P. aeruginosa supernatant, the S194-containing phosphopeptide increased significantly (log2FC for TSB vs. SNpulse = −2.80; FDR = 0.0320), whereas total IsaA protein abundance decreased significantly (log2FC for TSB vs. SNpulse = +1.87; FDR ≈ 6.75 × 10⁻⁸).
+
+The opposing changes in phosphopeptide and total protein abundance suggest a phosphorylation-associated response that cannot be explained simply by increased total IsaA abundance. Given IsaA's role in peptidoglycan cleavage, this may be relevant to cell-wall remodeling during early exposure. However, the functional effect of S194 phosphorylation remains unknown, and the data do not directly establish altered enzymatic activity, secretion, or phosphorylation occupancy.
+
+STRING functional association analysis
+
+STRING analysis of IsaA in Staphylococcus aureus NCTC 8325 identified functional associations with several proteins involved in cell-wall remodeling and cell division. The highest-scoring partners included the autolysin Atl (score 0.760), the LysM-domain protein SsaA (0.694), and the peptidoglycan hydrolase LytM (0.580). Additional associations included the cell-division proteins FtsL (0.536) and EzrA (0.531).
+
+These associations support a functional context for IsaA involving peptidoglycan metabolism and cell division, consistent with its experimentally supported peptidoglycan-cleaving activity.
+
+The significant increase in the S194 phosphopeptide-associated signal after 15 minutes of P. aeruginosa supernatant exposure, together with the significant decrease in total IsaA abundance, may therefore reflect an early response involving cell-wall-associated processes. However, STRING associations do not establish direct physical interactions or phosphorylation-dependent regulation, and the functional consequence of S194 phosphorylation remains unknown.
+
+### 8.4 Comparison of biological processes
+
+The three proteins containing significantly altered phosphosites after 15 minutes of P. aeruginosa supernatant exposure are associated with distinct biological functions.
+
+RpoY is annotated as a non-essential subunit of bacterial RNA polymerase and is therefore associated with DNA-templated transcription. The 5′-nucleotidase, lipoprotein e(P4) family protein has a less well-characterized function, with possible involvement in nucleotide processing and cell-envelope-associated processes. IsaA is a secreted peptidoglycan-cleaving enzyme involved in cell-wall degradation and remodeling, supported by published experimental research.
+
+The phosphopeptide-associated signal decreased for RpoY T21 but increased for the 5′-nucleotidase-family protein S33 and IsaA S194. Total-proteomics comparison showed no statistically significant abundance changes for RpoY or the 5′-nucleotidase-family protein, whereas total IsaA abundance decreased significantly despite an increase in its S194 phosphopeptide signal.
+
+Together, these findings indicate that the early phosphoproteomics response involves proteins associated with different cellular processes rather than one clearly defined pathway. The results provide potential links to transcription, nucleotide-related functions, and cell-wall remodeling, but do not establish altered protein activity or phosphorylation occupancy.
+
+Because only three phosphosites met the statistical criteria, no pathway enrichment or coordinated functional response can be inferred from these proteins alone. The biological significance of the individual phosphorylation events remains to be established.
+
+
+
+## 9. Interim conclusion
+
+The observed course DEA identifies three phosphosites meeting FDR < 0.05 and |log2FC| > 1 after 15 minutes of exposure. RpoY T21 shows a lower phosphosite-associated signal after exposure, while the 5′-nucleotidase-family S33 and IsaA S194 show higher signals. All three sites map uniquely to entries in the JE2 protein FASTA, with matching expected residues and local sequence windows. Comparing against total proteomics reveals that IsaA S194 and total IsaA abundance change in opposite directions. These findings motivate investigation of transcription, nucleotide-related processes and cell-wall biology, but do not demonstrate altered protein activity or phosphorylation occupancy. Functional annotation and mechanistic interpretation remain to be completed.
