@@ -14,8 +14,9 @@ source("../R/setup.R")
 ## 1. Question
 
 *Which proteins of* S. aureus *JE2 (wild type, anc) change after a 15 min PASN
-pulse, what are their functions, and do these changes persist after ~15 h of
-PASN exposure?*
+pulse, and what are their functions?*
+
+(The comparison 15 min vs ~15 h is analysed separately in topic 3.)
 
 ## 2. Hypothesis
 
@@ -23,12 +24,10 @@ PASN exposure?*
 
 * **H1:** The proteins that change after 15 min are mainly fermentation /
   anaerobic-metabolism proteins and they go **up**, consistent with PASN
-  components (e.g. HQNO) blocking respiration. Most of these changes are still
-  present after ~15 h (sustained).
-* **H0:** The early-changed proteins are not dominated by one functional group,
-  and their changes are not maintained at ~15 h.
+  components (e.g. HQNO) blocking respiration.
+* **H0:** The early-changed proteins are not dominated by one functional group.
 * **Prediction:**
-  * Contrasts: `TSB_vs_SNpulse_at_anc` (15 min) and `TSB_vs_SN_at_anc` (~15 h)
+  * Contrast: `TSB_vs_SNpulse_at_anc` (15 min)
   * Fermentation proteins with `diff < 0` (= higher after PASN)
   * "Changed": FDR < 0.05 and |log2FC| > 1 (same as notebook 07)
 
@@ -41,8 +40,8 @@ explain_contrast("TSB_vs_SNpulse_at_anc")
 
 * **Tables:** total proteome, course DEA (`dea_total`, prolfquapp, vsn) and
   per-sample normalised abundances (`abundances_total`, log2);
-  for section 5.6 also the phosphosite DEA (`dea_phospho_STYH`)
-* **Samples:** wild type (anc) only: TSB, SNpulse (15 min), SN (~15 h); n = 3 per group
+  for section 5.5 also the phosphosite DEA (`dea_phospho_STYH`)
+* **Samples:** wild type (anc) only: TSB and SNpulse (15 min); n = 3 per group
 * **Filters (identical to notebook 07):**
   * contaminants removed (default of `read_dea()` / `read_abundances()`)
   * **reliable** = detected in ≥ 2 of 3 replicates in both compared groups
@@ -52,7 +51,7 @@ explain_contrast("TSB_vs_SNpulse_at_anc")
   e.g. `TSB_vs_SNpulse_at_stk` to `contr`; the flags below work for them too.
 
 ```{r data}
-contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")
+contr <- c("TSB_vs_SNpulse_at_anc")
 
 dea <- read_dea("total", contrasts = contr)
 ab  <- read_abundances("total")
@@ -65,13 +64,10 @@ n_obs <- ab |>
   pivot_wider(names_from = medium, values_from = n, values_fill = 0)
 
 dea <- dea |>
-  # genotype = last part of the contrast name ("..._at_anc"); time from the medium
-  mutate(genotype = str_extract(contrast, "(anc|stk|stp)$"),
-         time     = if_else(str_detect(contrast, "SNpulse"), "15 min", "15 h")) |>
+  # genotype = last part of the contrast name ("..._at_anc")
+  mutate(genotype = str_extract(contrast, "(anc|stk|stp)$")) |>
   left_join(n_obs, by = c("protein_key", "genotype")) |>
-  mutate(reliable = if_else(time == "15 min",
-                            TSB >= 2 & SNpulse >= 2,
-                            TSB >= 2 & SN >= 2),
+  mutate(reliable  = TSB >= 2 & SNpulse >= 2,   # >= 2/3 in both groups
          reliable  = coalesce(reliable, FALSE) & estimate_type == "observed",
          changed   = FDR < 0.05 & abs(diff) > 1,
          direction = if_else(diff < 0, "higher after PASN", "lower after PASN"))
@@ -96,12 +92,9 @@ early <- dea |>
   direction in words and UniProt ID of the NCTC8325 ortholog; saved as CSV.
 * **Functional groups (5.3):** first automatic guess from keywords in the product
   name, then corrected by hand after checking UniProt.
-* **15 min vs ~15 h (5.4):** for each early protein, the change at ~15 h was
-  classified as *sustained* (changed, same direction), *reversed* (changed,
-  opposite direction), *transient* (not changed) or *not reliable at 15 h*.
-* **On/off proteins (5.5):** proteins detected in 3/3 replicates in one medium
+* **On/off proteins (5.4):** proteins detected in 3/3 replicates in one medium
   and 0/3 in the other; reported as presence/absence, without a fold change.
-* **Phosphosites (5.6):** STYH sites on the early proteins (course phospho DEA).
+* **Phosphosites (5.5):** STYH sites on the early proteins (course phospho DEA).
 * *AI: what did you check yourself (e.g. the 35 match notebook 07, raw values,
   contrast direction, UniProt lookups)?*
 
@@ -123,6 +116,8 @@ plot_protein(top6, filter(ab, genotype == "anc"))
 early |> select(-protein_key)
 early |> count(direction)
 ```
+Q2G1K9: Aldehyde-alcohol dehydrogenase, has catalytic activity in fermentation of pyruvate to ethanol
+
 
 ```{r save-list}
 # A result table (not raw data): may go to GitHub; Michelle can join it with her sites
@@ -177,43 +172,7 @@ early |>
 
 *Is fermentation / anaerobic metabolism the biggest group (H1)? Which groups go up, which down?*
 
-### 5.4 15 min vs ~15 h: sustained or transient?
-
-```{r time-compare}
-time_cmp <- dea |>
-  filter(genotype == "anc", protein_key %in% early$protein_key) |>
-  select(protein_key, locus_tag, product, time, diff, reliable, changed) |>
-  pivot_wider(names_from = time, values_from = c(diff, reliable, changed)) |>
-  mutate(pattern = case_when(
-    !`reliable_15 h`                                          ~ "not reliable at 15 h",
-    `changed_15 h` & sign(`diff_15 h`) == sign(`diff_15 min`) ~ "sustained",
-    `changed_15 h`                                            ~ "reversed",
-    .default                                                  = "transient"))
-
-time_cmp |> count(pattern)
-
-time_cmp |>
-  ggplot(aes(`diff_15 min`, `diff_15 h`, colour = pattern)) +
-  geom_hline(yintercept = 0, colour = "grey70") +
-  geom_vline(xintercept = 0, colour = "grey70") +
-  geom_abline(linetype = "dashed", colour = "grey50") +   # same change at both times
-  geom_point(size = 2.5) +
-  geom_text(aes(label = locus_tag), size = 2.3, vjust = -0.9, show.legend = FALSE) +
-  scale_colour_manual(values = c(sustained = "#D55E00", transient = "#0072B2",
-                                 reversed = "#CC79A7",
-                                 "not reliable at 15 h" = "grey60")) +
-  labs(x = "log2FC at 15 min (< 0 = higher after PASN)",
-       y = "log2FC at ~15 h (< 0 = higher in PASN)",
-       title = "Early-changed proteins: 15 min vs ~15 h (wild type)")
-```
-
-How to read it: **lower left** = up at both times; near the **horizontal
-0-line** = changed at 15 min, back to normal at 15 h; below the dashed diagonal
-= changed even more at 15 h.
-
-*Which pattern dominates? Name 2–3 example proteins with numbers.*
-
-### 5.5 On/off proteins (excluded from the counts)
+### 5.4 On/off proteins (excluded from the counts) still look at this topic!
 
 Detected in all 3 replicates in one medium and in none of the other.
 **Presence/absence evidence only**: no reliable fold change.
@@ -230,14 +189,14 @@ on_off <- n_obs |>
             by = "protein_key")
 
 on_off |> count(pattern)
-on_off |> select(pattern, locus_tag, product, staa8_uniprot, TSB, SNpulse, SN)
+on_off |> select(pattern, locus_tag, product, staa8_uniprot, TSB, SNpulse)
 
 if (nrow(on_off) > 0) plot_protein(head(on_off$protein_key, 6), filter(ab, genotype == "anc"))
 ```
 
 *How many? Are they close to the detection limit? Do they fit the groups from 5.3?*
 
-### 5.6 Do the early proteins carry phosphosites?
+### 5.5 Do the early proteins carry phosphosites?
 
 ```{r phospho-link}
 phos_early <- read_dea("phospho_STYH", contrasts = "TSB_vs_SNpulse_at_anc") |>
@@ -248,10 +207,11 @@ phos_early <- read_dea("phospho_STYH", contrasts = "TSB_vs_SNpulse_at_anc") |>
 n_distinct(phos_early$locus_tag)   # how many of the 35 have >= 1 phosphosite
 phos_early
 ```
+You could write in your report: “17 of the 35 changed proteins carry detected phosphosites, but 48 of 51 site estimates were based on imputed values. Apart from IsaA, whose sites followed the protein increase, we found no reliable phosphorylation changes on these proteins.”
 
-*A site on a protein that went up also looks "up" (more protein = more
-phosphopeptide): compare site and protein `diff` (combined notebook, 5.3).
-Agree with Michelle on the rule (≥ 2/3 or ≥ 1/3).*
+The two real phosphorylation changes are on proteins whose amount did not change
+
+This is actually the interesting part of your combined result: the clearest early phosphorylation changes happen on proteins whose amount stays the same. The cell changes their phosphorylation, not how much of them it makes. That’s what you’d expect from fast signalling, and it fits the idea behind topic 1, even though the overall fractions (2.3 % vs 1.7 %) weren’t significantly different.
 
 ## 6. Caveats
 
@@ -259,15 +219,13 @@ Agree with Michelle on the rule (≥ 2/3 or ≥ 1/3).*
 
 * *Only 3 replicates; FDR sensitive to single outlying samples.*
 * *Categories from product names / UniProt are approximate; many "hypothetical proteins".*
-* *15 h is not just a longer pulse: SN cells grew ~15 h in a different, partly
-  nutrient-depleted medium (notebook 07, caveat 1).*
 * *On/off proteins have no fold change; they may be close to the detection limit.*
 * *Protein abundance ≠ activity (e.g. enzymes can be regulated by phosphorylation).*
 
 ## 7. Conclusion and next steps
 
 *Answer your question in 2–3 sentences: which kinds of proteins change first,
-in which direction, and do the changes persist at ~15 h? Is H1 supported?
+and in which direction? Is H1 supported?
 What would you do next (e.g. the mutants)?*
 
 ## 8. Sources
