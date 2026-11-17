@@ -70,15 +70,109 @@ code for you: what did you check yourself?*
 
 ## 5. Results
 
-Always start with the raw per-sample values:
+### 5.1 Raw values first
 
-```{r raw-values}
-# plot_protein("B7H15_13375", abundances)
+Per-sample normalised abundances of the three sites (phosphosite) and of their
+proteins (protein), wild type only.
+
+```{r raw-values, fig.width = 9, fig.height = 5.5}
+# Readable label per site, e.g. "B7H15_05655 T21"
+labels <- early_sites |>
+  mutate(site_label = paste0(locus_tag, " ", residue, position))
+
+raw <- bind_rows(
+  read_abundances("phospho_STYH") |>
+    filter(genotype == "anc") |>
+    inner_join(early_sites, by = c("locus_tag", "residue", "position")) |>
+    mutate(layer = "phosphosite"),
+  read_abundances("total") |>
+    filter(genotype == "anc", locus_tag %in% early_sites$locus_tag) |>
+    mutate(layer = "protein")
+) |>
+  left_join(select(labels, locus_tag, site_label), by = "locus_tag")
+
+# How many of the 3 replicates have a value?
+raw |>
+  group_by(site_label, layer, medium) |>
+  summarise(detected = sum(!is.na(normalized_abundance)), .groups = "drop") |>
+  pivot_wider(names_from = medium, values_from = detected) |>
+  knitr::kable()
+
+ggplot(raw, aes(medium, normalized_abundance)) +
+  stat_summary(fun = mean, fun.min = mean, fun.max = mean, geom = "crossbar",
+               width = 0.4, colour = "grey50", na.rm = TRUE) +
+  geom_point(position = position_jitter(width = 0.05, height = 0, seed = 1),
+             colour = "#0072B2", na.rm = TRUE) +
+  facet_grid(layer ~ site_label, scales = "free_y") +
+  scale_x_discrete(labels = c(TSB = "TSB", SNpulse = "15 min\nPASN", SN = "~15 h\nPASN")) +
+  labs(x = NULL, y = "normalised abundance (log2)",
+       caption = "wild type JE2, n = 3; grey bar = mean; missing point = not detected")
 ```
 
-```{r results}
-# your analysis here
+*All replicates present? Outliers?*
+
+### 5.2 Fold changes of sites and proteins
+
+```{r fc-table}
+contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc", "SNpulse_vs_SN_at_anc")
+
+fc_all <- bind_rows(
+  read_dea("phospho_STYH", contrasts = contr) |>
+    inner_join(early_sites, by = c("locus_tag", "residue", "position")) |>
+    mutate(layer = "phosphosite"),
+  read_dea("total", contrasts = contr) |>
+    filter(locus_tag %in% early_sites$locus_tag) |>
+    mutate(layer = "protein")
+) |>
+  left_join(select(labels, locus_tag, site_label), by = "locus_tag")
+
+fc_all |>
+  mutate(comparison = recode(contrast,
+                             TSB_vs_SNpulse_at_anc = "TSB vs 15 min",
+                             TSB_vs_SN_at_anc      = "TSB vs ~15 h",
+                             SNpulse_vs_SN_at_anc  = "15 min vs ~15 h"),
+         # A_vs_B: diff > 0 = higher in A, diff < 0 = higher in B
+         higher_in = if_else(diff > 0,
+                             str_extract(contrast, "^[^_]+"),
+                             str_match(contrast, "_vs_([^_]+)")[, 2]),
+         fold    = round(2^abs(diff), 1),
+         changed = FDR < 0.05 & abs(diff) > 1,
+         diff    = round(diff, 2),
+         FDR     = signif(FDR, 2)) |>
+  arrange(site_label, layer, factor(contrast, levels = contr)) |>
+  select(site_label, layer, comparison, diff, fold, higher_in, FDR, changed,
+         estimate_type) |>
+  knitr::kable()
 ```
+
+(`SNpulse` = 15 min PASN, `SN` = ~15 h PASN.)
+
+### 5.3 Site vs protein after 15 min and ~15 h
+
+```{r fc-plot, fig.width = 8, fig.height = 5}
+fc <- fc_all |>
+  filter(contrast %in% c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc")) |>
+  mutate(time = factor(if_else(contrast == "TSB_vs_SNpulse_at_anc", "15 min", "~15 h"),
+                       levels = c("15 min", "~15 h")),
+         # flip the sign: TSB_vs_X has diff < 0 = higher in PASN
+         log2fc  = -diff, lo = -conf.high, hi = -conf.low,
+         changed = FDR < 0.05 & abs(diff) > 1)
+
+ggplot(fc, aes(log2fc, layer, colour = layer)) +
+  geom_vline(xintercept = 0, colour = "grey40") +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", colour = "grey80") +
+  geom_pointrange(aes(xmin = lo, xmax = hi, shape = changed)) +
+  facet_grid(site_label ~ time) +
+  scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1),
+                     labels = c(`TRUE` = "changed", `FALSE` = "not changed")) +
+  scale_colour_manual(values = c(phosphosite = "#CC3311", protein = "#0077BB"),
+                      guide = "none") +
+  labs(x = "log2 fold change PASN vs TSB (> 0 = higher after PASN)",
+       y = NULL, shape = NULL,
+       caption = "line = 95 % confidence interval; dashed = 2-fold")
+```
+
+*Which sites are still changed after ~15 h? Does the protein explain the site change?*
 
 ## 6. Caveats
 
