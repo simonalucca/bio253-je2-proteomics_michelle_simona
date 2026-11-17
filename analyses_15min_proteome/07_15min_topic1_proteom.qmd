@@ -1,5 +1,5 @@
 ---
-title: "Proteom change vs TSB control after 15mi pulse and 15h SN"
+title: "Proteom change vs TSB control after 15min pulse and 15h SN"
 subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle)"
 ---
 
