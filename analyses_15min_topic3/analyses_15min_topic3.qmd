@@ -1,6 +1,6 @@
 ---
-title: "06 – Your question"
-subtitle: "Bio253 HS2026 · group: ______ (names: ______)"
+title: "Topic 3: are the early phosphosites still changes after ~15h PASN"
+subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · topic 3"
 ---
 
 Copy this file (e.g. `07_groupX_my_question.qmd`) and fill in every section.
@@ -12,7 +12,7 @@ source("../R/setup.R")
 
 ## 1. Question
 
-*One sentence. What do you want to know?*
+*Do the three phosphosites that show significant changes after 15 minutes of Pseudomonas aeruginosa supernatant (PASN) exposure in Staphylococcus aureus JE2 maintain similar changes after approximately 15 hours, and how do these changes relate to the abundance of their corresponding proteins?*
 
 ## 2. Hypothesis
 
@@ -28,13 +28,40 @@ explain_contrast("TSB_vs_SN_at_anc")
 
 ## 3. Data used
 
-*Which tables (total proteome / phospho STY / STYH / site tables), which samples,
-which filters (e.g. contaminants removed, ≥ 2/3 replicates)?*
 
 ```{r data}
-abundances <- read_abundances("total")
-dea <- read_dea("total")
+library(dplyr)
+
+phospho_dea <- read_dea("phospho_STYH")
+
+early_sites <- tibble(
+  locus_tag = c("B7H15_01690", "B7H15_05655", "B7H15_14290"),
+  residue = c("S", "T", "S"),
+  position = c(33, 21, 194)
+)
+
+phospho_comparison <- phospho_dea |>
+  inner_join(
+    early_sites,
+    by = c("locus_tag", "residue", "position")
+  ) |>
+  filter(
+    contrast %in% c(
+      "TSB_vs_SNpulse_at_anc",
+      "TSB_vs_SN_at_anc"
+    )
+  ) |>
+  select(
+    locus_tag, product, residue, position,
+    contrast, diff, FDR, estimate_type
+  ) |>
+  arrange(locus_tag, contrast)
+
+phospho_comparison |>
+  dplyr::select(locus_tag, residue, position, contrast, diff, FDR) |>
+  print(n = Inf, width = Inf)
 ```
+
 
 ## 4. Methods
 

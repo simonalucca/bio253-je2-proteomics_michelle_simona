@@ -18,12 +18,15 @@ Polished parts go to `reports/` at the end.
 source("../R/setup.R")
 ```
 
-## 1. Question
+## 1. Research question
 
-Does *S. aureus* JE2 show early phosphorylation changes after 15 min of
-*P. aeruginosa* supernatant (PASN) exposure, before major changes in protein abundance?
+Does *Staphylococcus aureus* JE2 show a greater proportion of significant phosphosite changes than protein abundance changes after 15 minutes of exposure to *Pseudomonas aeruginosa* supernatant (PASN)?
+
+  To investigate this, we compare the early response (15min) with a longer exposure (~15h), using total proteomics and phosphoproteomics data.
 
 ## 2. Hypothesis
+
+We hypothesize that phosphorylation is involved in the early response to PASN and that a larger proportion of reliably measured phosphosites than proteins will show significant changes after 15 minutes.
 
 * **H1:** After 15 min (SNpulse), a larger fraction of reliably measured
   phosphosites than proteins changes.
