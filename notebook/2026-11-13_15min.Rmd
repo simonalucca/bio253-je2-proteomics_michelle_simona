@@ -1,0 +1,113 @@
+---
+title: "notebook_13_11_26_15min_group"
+output: html_document
+---
+
+
+# 2026-11-13 – group 15min (Simona, Michelle)
+
+## Question for today
+
+1. Simona: what are the functions of the early-changed proteins (notebook 08),
+   and how do they connect to the course papers?
+2. Michelle (topic 2): which proteins carry the three changed phosphosites after
+   15 min, and which biological processes are they involved in?
+
+## What we did
+
+**Organisation**
+
+- updated the notebook of 12.11: the comparison 15 min vs ~15 h was taken out of
+  notebook 08, it is analysed separately in topic 3
+
+**Simona – proteome** `analyses_15min_proteome/08_15min_changed_proteins.qmd`
+
+- ran sections 5.3–5.5 (functional groups, on/off proteins, phosphosites on the
+  early proteins)
+- looked up the early-changed proteins in UniProt (via the NCTC 8325 ortholog
+  `staa8_uniprot`) and in STRING v12
+- made a STRING network of the early proteins
+  (`reports/string_evidence_network_34_nodes.svg`, `reports/string_interactions_34_nodes.tsv`)
+  and included it in notebook 08
+- updated `reports/15min_changed_proteins_anc.csv`
+- new section 9: functions of the up- and down-regulated proteins (9.1, 9.2), how
+  well characterised they are (9.3), connection to the course papers (9.4), open
+  points (9.5)
+- rendered notebook 08 and pushed it
+
+**Michelle – topic 2** `analyses_15min_phospho/topic2/01_15min_changed_phospho_sites.qmd`
+
+- filtered the course phospho DEA (`TSB_vs_SNpulse_at_anc`, observed, ≥ 2/3 in
+  TSB and SNpulse, FDR < 0.05, |log2FC| > 1) -> the same 3 sites as in topic 1
+- checked detection and direction with the measured site intensities
+- mapped the 3 sites to the JE2 reference FASTA (protein IDs, residues, sequence windows)
+- compared each site with the total-protein change
+- looked up the 3 proteins in UniProt and STRING (sections 8.1–8.4) and wrote an
+  interim conclusion (section 9)
+
+## Results (key numbers)
+
+**Proteome (notebook 08)**
+
+- the 35th hit `zz_Y-FGCZCont00173_` is an FGCZ lab contaminant -> **34 real
+  proteins** changed after 15 min: **27 up, 7 down** after PASN
+- largest group up = fermentation / anaerobic metabolism (6): AdhE 18.2x, NrdD 7.7x,
+  PflA 5.2x, Ldh1 4.6x, NrdG 3.7x, Adh 3.3x; they form the largest cluster in the
+  STRING network
+- also up: cell-wall hydrolases (SceD 4.9x, LytM 4.3x, IsaA 3.7x) and SepF;
+  stress / regulation (PerR 2.2x, two cold-shock proteins, AraC regulator);
+  three VOC / glyoxalase-family detox enzymes
+- strongest decrease: delta-hemolysin (Hld) 8.1x lower after PASN (*agr* / RNAIII
+  read-out); also the MHC class II analog protein (Q2FW51) lower
+- 17 of 34 proteins are "conserved hypothetical" in STRING; 4 of them are truly
+  unknown in both annotations
+- on/off proteins (3/3 vs 0/3): 8 only in TSB, 8 only after PASN (e.g. glutathione
+  peroxidase and MsrA lost after PASN; a MerR family regulator appears)
+- 17 of the early proteins carry at least one phosphosite in the STYH data, but
+  almost all estimates are `lod_imputed` and none passes the thresholds
+- link to the papers: the 15 min pattern looks like the beginning of the 18 h
+  response in Schwyter et al. 2025 (fermentation, oxidative stress, less virulence)
+
+**Topic 2 (Michelle)**
+
+- RpoY T21 (B7H15_05655, "hypothetical protein" in JE2, UniProt Q2FZG8 = RNA
+  polymerase subunit epsilon): diff = +2.43 (higher in TSB = **lower** after PASN),
+  FDR 0.003; protein unchanged (FDR 0.21). STRING partners: RpoA, RpoB, RpoC, RpoZ, SigA
+- 5'-nucleotidase S33 (B7H15_01690, Q2G170): diff = −2.42 (**higher** after PASN),
+  FDR 0.017; protein unchanged (FDR 0.78). S33 lies right after the predicted
+  signal peptide (1–31). STRING partners: DeoD, DeoD-2, GuaB (purine metabolism, text mining only)
+- IsaA S194 (B7H15_14290, Q2FV52): diff = −2.80 (**higher** after PASN), FDR 0.032;
+  protein also higher (diff = −1.87, FDR 7e-8) -> mostly more protein, not more
+  phosphorylation
+- the 3 proteins belong to different processes (transcription, nucleotide
+  metabolism, cell wall) -> no common pathway can be inferred from 3 sites
+
+## Problems / surprises
+
+- a lab contaminant was among the 35 "changed proteins" -> still to be removed in
+  notebooks 07 and 08 (count = 34)
+- JE2 annotation is often vague ("hypothetical protein"); the NCTC 8325 ortholog
+  in UniProt / STRING gives more information (e.g. B7H15_05655 = RpoY)
+- Q2FW51 is called "toxin" in JE2 but "MHC class II analog protein" in STRING -> check
+- several hits are borderline (FDR 0.016–0.048): AraC regulator, BrnQ-like carrier,
+  Q2FZA8, EssG, Q2G1V8, tautomerase
+- AdhE 18x in 15 min is surprisingly large -> check whether it was near the
+  detection limit in TSB
+- we both pushed in the morning -> merge commits; pull before working
+
+*(add anything else that went wrong on Friday)*
+
+## AI use
+
+*Fill in what you used on Friday, e.g.:* Claude (Anthropic): help with the
+UniProt / STRING look-up and drafting section 9 of notebook 08 and sections 8–9 of
+the topic 2 notebook. We checked the functions in UniProt / STRING ourselves.
+
+## Next steps
+
+- notebook 08: remove the contaminant (34 proteins), confirm functions in UniProt /
+  AureoWiki (Q2FW51, AraC regulator, VOC proteins), fill in caveats and conclusion
+- check whether SodA, KatA, AhpC, CydA and Rot already change after 15 min
+- topic 3: are the 3 early phosphosites and their proteins still changed after ~15 h?
+- align the replicate-count source for phosphosites (122 vs 131)
+- always pull before working, push after committing
