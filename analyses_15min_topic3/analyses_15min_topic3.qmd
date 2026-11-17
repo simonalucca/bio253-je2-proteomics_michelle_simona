@@ -3,8 +3,6 @@ title: "Topic 3: are the early phosphosites still changes after ~15h PASN"
 subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · topic 3"
 ---
 
-Copy this file (e.g. `07_groupX_my_question.qmd`) and fill in every section.
-Keep it short and honest. A clear negative result is a good result.
 
 ```{r setup}
 source("../R/setup.R")
@@ -42,12 +40,15 @@ phospho_dea <- read_dea("phospho_STYH", contrasts = contr)
 protein_dea <- read_dea("total", contrasts = contr)
 ```
 
-
 ## 4. Methods
 
-*What did you compute and why? Which R functions / packages? If an AI agent wrote
-code for you: what did you check yourself?*
-
+**Sites studied:** the three phosphosites that changed after 15 min in topic 1/2
+  (RpoY T21, 5'-nucleotidase S33, IsaA S194), selected by locus tag, residue and
+  position. We followed the same three sites at ~15 h and looked at the protein
+  each one is on.
+**Tools:** R with dplyr, tidyr, stringr, ggplot2, and the course helper
+  functions in `R/` (`read_dea()`, `read_abundances()`, `explain_contrast()`).
+  
 ## 5. Results
 
 ### 5.1 Raw values first
@@ -162,11 +163,29 @@ strain a clean mutant (notebook 03)? Protein abundance vs activity? Batch effect
 
 ## 7. Conclusion and next steps
 
-*Answer your question in 2–3 sentences. What experiment or analysis would you do next?*
+*The three early phosphosites behave differently after ~15 h of PASN.
+**RpoY T21** is dephosphorylated only transiently: ~5-fold lower after 15 min,
+back to the TSB level after ~15 h, without a change in RpoY protein.
+**5'-nucleotidase S33** stays phosphorylated: ~5-fold higher after 15 min and
+~6-fold higher after ~15 h, while its protein increases only ~1.5-fold.
+**IsaA S194** follows its protein, which is ~4-fold higher after 15 min and back
+to normal after ~15 h. H1 (all early changes are transient) is therefore only
+partly supported: the early phospho response contains both a transient (RpoY T21)
+and a persistent (5'-nucleotidase S33) signal.*
 
 ## 8. Sources
 
-*Papers, databases (UniProt IDs, STRING), and AI tools used – with what for.*
+* Course data: prolfquapp DEA results and normalised abundances (FGCZ),
+  *S. aureus* JE2 genome CP020619.1.
+* UniProt (NCTC 8325 orthologs): Q2FZG8 (RpoY, RNA polymerase subunit epsilon;
+  B7H15_05655), Q2G170 (5'-nucleotidase, lipoprotein e(P4) family; B7H15_01690),
+  Q2FV52 (IsaA; B7H15_14290).
+* STRING v12 (functional partners, see topic 2 notebook).
+* Schwyter et al. 2025, mSystems, doi:10.1128/msystems.00262-25 (JE2 in PASN, ~18 h).
+* Huemer et al. 2023, Sci. Signal. 16, eabj8194, doi:10.1126/scisignal.abj8194
+  (phosphoproteome changes in *S. aureus* without total-proteome changes).
+* AI: Claude (Anthropic) suggested the code for sections 5.1–5.3 and drafted
+  sections 6–8; we ran the code and checked the numbers and plots ourselves.
 
 ```{r session}
 sessionInfo()
