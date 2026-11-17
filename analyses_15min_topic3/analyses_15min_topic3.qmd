@@ -90,12 +90,33 @@ ggplot(raw, aes(medium, normalized_abundance)) +
        caption = "wild type JE2, n = 3; grey bar = mean; missing point = not detected")
 ```
 
-*All replicates present? Outliers?*
+**Replicates:** all three proteins were detected in 3/3 replicates in every
+condition. The phosphosites T21 (B7H15_05655) and S33 (B7H15_01690) were also
+detected in 3/3 replicates everywhere. IsaA S194 (B7H15_14290) was missing in one
+TSB and one ~15 h replicate (2/3), so its fold changes rest on two values in
+these groups.
+
+**Outliers:** the replicates group closely and no single sample stands out. The
+spread is largest for T21 after 15 min (about 1.6 log2 units between replicates),
+but all three values are clearly below TSB.
+
+**First impression:** the raw values already show the three patterns tested in 5.2:
+* T21 drops after 15 min and is back near the TSB level after ~15 h.
+* S33 is higher after 15 min and stays high after ~15 h.
+* IsaA S194 and the IsaA protein both rise after 15 min and fall back after ~15 h.
+
+The proteins of T21 and S33 change only slightly.
 
 ### 5.2 Fold changes of sites and proteins
 
 ```{r fc-table}
 contr <- c("TSB_vs_SNpulse_at_anc", "TSB_vs_SN_at_anc", "SNpulse_vs_SN_at_anc")
+
+# Replicates detected per site / protein and medium (from 5.1)
+n_obs <- raw |>
+  group_by(locus_tag, layer, medium) |>
+  summarise(n = sum(!is.na(normalized_abundance)), .groups = "drop") |>
+  pivot_wider(names_from = medium, values_from = n, values_fill = 0)
 
 fc_all <- bind_rows(
   read_dea("phospho_STYH", contrasts = contr) |>
@@ -105,7 +126,15 @@ fc_all <- bind_rows(
     filter(locus_tag %in% early_sites$locus_tag) |>
     mutate(layer = "protein")
 ) |>
-  left_join(select(labels, locus_tag, site_label), by = "locus_tag")
+  left_join(select(labels, locus_tag, site_label), by = "locus_tag") |>
+  left_join(n_obs, by = c("locus_tag", "layer")) |>
+  # same rules as topic 1/2: >= 2/3 replicates in both groups, observed estimate
+  mutate(reliable = case_when(
+           contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
+           contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2,
+           contrast == "SNpulse_vs_SN_at_anc"  ~ SNpulse >= 2 & SN >= 2),
+         changed = reliable & estimate_type == "observed" &
+                   FDR < 0.05 & abs(diff) > 1)
 
 fc_all |>
   mutate(comparison = recode(contrast,
@@ -117,12 +146,11 @@ fc_all |>
                              str_extract(contrast, "^[^_]+"),
                              str_match(contrast, "_vs_([^_]+)")[, 2]),
          fold    = round(2^abs(diff), 1),
-         changed = FDR < 0.05 & abs(diff) > 1,
          diff    = round(diff, 2),
          FDR     = signif(FDR, 2)) |>
   arrange(site_label, layer, factor(contrast, levels = contr)) |>
-  select(site_label, layer, comparison, diff, fold, higher_in, FDR, changed,
-         estimate_type) |>
+  select(site_label, layer, comparison, diff, fold, higher_in, FDR, reliable,
+         changed, estimate_type) |>
   knitr::kable()
 ```
 
@@ -136,8 +164,7 @@ fc <- fc_all |>
   mutate(time = factor(if_else(contrast == "TSB_vs_SNpulse_at_anc", "15 min", "~15 h"),
                        levels = c("15 min", "~15 h")),
          # flip the sign: TSB_vs_X has diff < 0 = higher in PASN
-         log2fc  = -diff, lo = -conf.high, hi = -conf.low,
-         changed = FDR < 0.05 & abs(diff) > 1)
+         log2fc  = -diff, lo = -conf.high, hi = -conf.low)
 
 ggplot(fc, aes(log2fc, layer, colour = layer)) +
   geom_vline(xintercept = 0, colour = "grey40") +
