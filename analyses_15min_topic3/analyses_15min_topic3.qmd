@@ -182,23 +182,41 @@ ggplot(fc, aes(log2fc, layer, colour = layer)) +
 
 *Which sites are still changed after ~15 h? Does the protein explain the site change?*
 
+
 ## 6. Caveats
 
-*Missing values / imputation? Only 3 replicates? Multiple testing? Is the `stp`
-strain a clean mutant (notebook 03)? Protein abundance vs activity? Batch effects
-(re-injected samples)?*
+Several limitations should be considered when interpreting the results of this exploratory analysis.
+
+1. **Selection of phosphosites.** Only three phosphosites were investigated because they had already been identified as significantly changed after 15 minutes of PASN exposure. Therefore, this analysis describes the behaviour of selected candidates rather than the overall phosphoproteome. The selection based on early significance may also favour sites with unusually large estimated early effects.
+
+2. **Limited biological replicates and missing values.** The dataset contains three biological replicates per condition. Missing measurements and imputation may influence the estimated fold changes and statistical significance. We therefore considered replicate coverage and distinguished observed from imputed DEA estimates. However, limited replication reduces the precision of the estimated responses.
+
+3. **Phosphosite abundance versus phosphorylation occupancy.** Phosphosite abundance can be influenced by both phosphorylation and total protein abundance. For example, the early increase in IsaA S194 coincides with an increase in total IsaA protein. Although we compared phosphosite and protein abundances, we cannot directly determine phosphorylation occupancy or kinase activity from these measurements.
+
+4. **Statistical interpretation.** We used FDR < 0.05 and |log2FC| > 1 to identify statistically significant changes of substantial magnitude. A result that does not meet these criteria does not necessarily indicate the absence of a biological effect. Furthermore, the three phosphosites were selected based on their significant early changes, making this an exploratory follow-up rather than an independent validation.
+
+5. **Comparison of exposure conditions.** The 15-minute and approximately 15-hour measurements represent two experimental exposure conditions rather than a continuous time course. Differences may reflect exposure duration as well as changes in growth state or other experimental conditions. With only these two exposure durations, we cannot determine exactly when the observed changes occurred.
+
+6. **Protein annotation and functional interpretation.** The biological functions of the selected proteins provide useful context, but changes in phosphosite abundance do not directly demonstrate changes in protein activity or function. In particular, the proposed RpoY annotation for B7H15_05655 should be verified before drawing functional conclusions.
+
+Overall, these limitations mean that the observed patterns should be interpreted as evidence of different phosphosite abundance responses under the tested conditions, rather than proof of specific phosphorylation mechanisms.
+
+
 
 ## 7. Conclusion and next steps
 
-*The three early phosphosites behave differently after ~15 h of PASN.
-**RpoY T21** is dephosphorylated only transiently: ~5-fold lower after 15 min,
-back to the TSB level after ~15 h, without a change in RpoY protein.
-**5'-nucleotidase S33** stays phosphorylated: ~5-fold higher after 15 min and
-~6-fold higher after ~15 h, while its protein increases only ~1.5-fold.
-**IsaA S194** follows its protein, which is ~4-fold higher after 15 min and back
-to normal after ~15 h. H1 (all early changes are transient) is therefore only
-partly supported: the early phospho response contains both a transient (RpoY T21)
-and a persistent (5'-nucleotidase S33) signal.*
+The three phosphosites identified as significantly changed after 15 minutes of PASN exposure showed different patterns after approximately 15 hours.
+
+**5'-nucleotidase S33** remained significantly elevated at both exposure durations (5.4-fold and 6.5-fold relative to TSB). The corresponding protein showed smaller abundance changes, suggesting that protein abundance alone may not explain the phosphosite response.
+
+**B7H15_05655 T21** showed a strong decrease after 15 minutes (5.4-fold lower than TSB), but only a small, non-significant difference after approximately 15 hours. The direct comparison between the two exposure conditions was significant (FDR = 0.009), consistent with an early response that is not maintained.
+
+**IsaA S194** increased approximately 7-fold after 15 minutes, together with a 3.7-fold increase in total IsaA protein abundance. Neither increase was maintained after approximately 15 hours. The direct phosphosite comparison between the two exposure conditions was significant (FDR = 0.0032).
+
+Overall, the results indicate that early phosphosite abundance changes are not uniformly maintained during prolonged PASN exposure. One site showed a sustained increase, whereas two showed significant differences between the exposure conditions.
+
+Further analyses could investigate the biological functions of these candidates, compare phosphosite and protein abundance changes more quantitatively, and include additional time points to characterise their response dynamics.
+
 
 ## 8. Sources
 

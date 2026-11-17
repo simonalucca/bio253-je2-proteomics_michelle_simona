@@ -143,47 +143,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="data-used" class="level2">
 <h2 class="anchored" data-anchor-id="data-used">3. Data used</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>phospho_dea <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">"phospho_STYH"</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>early_sites <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">locus_tag =</span> <span class="fu">c</span>(<span class="st">"B7H15_01690"</span>, <span class="st">"B7H15_05655"</span>, <span class="st">"B7H15_14290"</span>),</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">residue =</span> <span class="fu">c</span>(<span class="st">"S"</span>, <span class="st">"T"</span>, <span class="st">"S"</span>),</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">position =</span> <span class="fu">c</span>(<span class="dv">33</span>, <span class="dv">21</span>, <span class="dv">194</span>)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>phospho_comparison <span class="ot">&lt;-</span> phospho_dea <span class="sc">|&gt;</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    early_sites,</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"locus_tag"</span>, <span class="st">"residue"</span>, <span class="st">"position"</span>)</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    contrast <span class="sc">%in%</span> <span class="fu">c</span>(</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>      <span class="st">"TSB_vs_SNpulse_at_anc"</span>,</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>      <span class="st">"TSB_vs_SN_at_anc"</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    locus_tag, product, residue, position,</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    contrast, diff, FDR, estimate_type</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(locus_tag, contrast)</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>phospho_comparison <span class="sc">|&gt;</span></span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(locus_tag, residue, position, contrast, diff, FDR) <span class="sc">|&gt;</span></span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>, <span class="at">width =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 6
-  locus_tag   residue position contrast                diff     FDR
-  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;                  &lt;dbl&gt;   &lt;dbl&gt;
-1 B7H15_01690 S             33 TSB_vs_SN_at_anc      -2.71  0.00275
-2 B7H15_01690 S             33 TSB_vs_SNpulse_at_anc -2.42  0.0175 
-3 B7H15_05655 T             21 TSB_vs_SN_at_anc       0.453 1.000  
-4 B7H15_05655 T             21 TSB_vs_SNpulse_at_anc  2.43  0.00331
-5 B7H15_14290 S            194 TSB_vs_SN_at_anc       0.448 1.000  
-6 B7H15_14290 S            194 TSB_vs_SNpulse_at_anc -2.80  0.0320 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>early_sites <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">locus_tag =</span> <span class="fu">c</span>(<span class="st">"B7H15_01690"</span>, <span class="st">"B7H15_05655"</span>, <span class="st">"B7H15_14290"</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">residue   =</span> <span class="fu">c</span>(<span class="st">"S"</span>, <span class="st">"T"</span>, <span class="st">"S"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">position  =</span> <span class="fu">c</span>(<span class="dv">33</span>, <span class="dv">21</span>, <span class="dv">194</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>contr <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"TSB_vs_SNpulse_at_anc"</span>, <span class="st">"TSB_vs_SN_at_anc"</span>, <span class="st">"SNpulse_vs_SN_at_anc"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>phospho_dea <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">"phospho_STYH"</span>, <span class="at">contrasts =</span> contr)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>protein_dea <span class="ot">&lt;-</span> <span class="fu">read_dea</span>(<span class="st">"total"</span>, <span class="at">contrasts =</span> contr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="methods" class="level2">
@@ -192,13 +161,403 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">5. Results</h2>
-<p>Always start with the raw per-sample values:</p>
+<section id="raw-values-first" class="level3">
+<h3 class="anchored" data-anchor-id="raw-values-first">5.1 Raw values first</h3>
+<p>Per-sample normalised abundances of the three sites (phosphosite) and of their proteins (protein), wild type only.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot_protein("B7H15_13375", abundances)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Readable label per site, e.g. "B7H15_05655 T21"</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>labels <span class="ot">&lt;-</span> early_sites <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_label =</span> <span class="fu">paste0</span>(locus_tag, <span class="st">" "</span>, residue, position))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>raw <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_abundances</span>(<span class="st">"phospho_STYH"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">"anc"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">inner_join</span>(early_sites, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"locus_tag"</span>, <span class="st">"residue"</span>, <span class="st">"position"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">"phosphosite"</span>),</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_abundances</span>(<span class="st">"total"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(genotype <span class="sc">==</span> <span class="st">"anc"</span>, locus_tag <span class="sc">%in%</span> early_sites<span class="sc">$</span>locus_tag) <span class="sc">|&gt;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">"protein"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(labels, locus_tag, site_label), <span class="at">by =</span> <span class="st">"locus_tag"</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co"># How many of the 3 replicates have a value?</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>raw <span class="sc">|&gt;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_label, layer, medium) <span class="sc">|&gt;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">detected =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(normalized_abundance)), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> medium, <span class="at">values_from =</span> detected) <span class="sc">|&gt;</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">site_label</th>
+<th style="text-align: left;">layer</th>
+<th style="text-align: right;">TSB</th>
+<th style="text-align: right;">SNpulse</th>
+<th style="text-align: right;">SN</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+</tr>
+</tbody>
+</table>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(raw, <span class="fu">aes</span>(medium, normalized_abundance)) <span class="sc">+</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">fun.min =</span> mean, <span class="at">fun.max =</span> mean, <span class="at">geom =</span> <span class="st">"crossbar"</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>               <span class="at">width =</span> <span class="fl">0.4</span>, <span class="at">colour =</span> <span class="st">"grey50"</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.05</span>, <span class="at">height =</span> <span class="dv">0</span>, <span class="at">seed =</span> <span class="dv">1</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">colour =</span> <span class="st">"#0072B2"</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(layer <span class="sc">~</span> site_label, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="fu">c</span>(<span class="at">TSB =</span> <span class="st">"TSB"</span>, <span class="at">SNpulse =</span> <span class="st">"15 min</span><span class="sc">\n</span><span class="st">PASN"</span>, <span class="at">SN =</span> <span class="st">"~15 h</span><span class="sc">\n</span><span class="st">PASN"</span>)) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"normalised abundance (log2)"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"wild type JE2, n = 3; grey bar = mean; missing point = not detected"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analyses_15min_topic3_files/figure-html/raw-values-1.png" class="img-fluid figure-img" width="864"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>All replicates present? Outliers?</em></p>
+</section>
+<section id="fold-changes-of-sites-and-proteins" class="level3">
+<h3 class="anchored" data-anchor-id="fold-changes-of-sites-and-proteins">5.2 Fold changes of sites and proteins</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your analysis here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>contr <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"TSB_vs_SNpulse_at_anc"</span>, <span class="st">"TSB_vs_SN_at_anc"</span>, <span class="st">"SNpulse_vs_SN_at_anc"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>fc_all <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_dea</span>(<span class="st">"phospho_STYH"</span>, <span class="at">contrasts =</span> contr) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">inner_join</span>(early_sites, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"locus_tag"</span>, <span class="st">"residue"</span>, <span class="st">"position"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">"phosphosite"</span>),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_dea</span>(<span class="st">"total"</span>, <span class="at">contrasts =</span> contr) <span class="sc">|&gt;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(locus_tag <span class="sc">%in%</span> early_sites<span class="sc">$</span>locus_tag) <span class="sc">|&gt;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">layer =</span> <span class="st">"protein"</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(labels, locus_tag, site_label), <span class="at">by =</span> <span class="st">"locus_tag"</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>fc_all <span class="sc">|&gt;</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">comparison =</span> <span class="fu">recode</span>(contrast,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>                             <span class="at">TSB_vs_SNpulse_at_anc =</span> <span class="st">"TSB vs 15 min"</span>,</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>                             <span class="at">TSB_vs_SN_at_anc      =</span> <span class="st">"TSB vs ~15 h"</span>,</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>                             <span class="at">SNpulse_vs_SN_at_anc  =</span> <span class="st">"15 min vs ~15 h"</span>),</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>         <span class="co"># A_vs_B: diff &gt; 0 = higher in A, diff &lt; 0 = higher in B</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">higher_in =</span> <span class="fu">if_else</span>(diff <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">str_extract</span>(contrast, <span class="st">"^[^_]+"</span>),</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">str_match</span>(contrast, <span class="st">"_vs_([^_]+)"</span>)[, <span class="dv">2</span>]),</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">fold    =</span> <span class="fu">round</span>(<span class="dv">2</span><span class="sc">^</span><span class="fu">abs</span>(diff), <span class="dv">1</span>),</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">changed =</span> FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>         <span class="at">diff    =</span> <span class="fu">round</span>(diff, <span class="dv">2</span>),</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>         <span class="at">FDR     =</span> <span class="fu">signif</span>(FDR, <span class="dv">2</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(site_label, layer, <span class="fu">factor</span>(contrast, <span class="at">levels =</span> contr)) <span class="sc">|&gt;</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(site_label, layer, comparison, diff, fold, higher_in, FDR, changed,</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>         estimate_type) <span class="sc">|&gt;</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 10%">
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">site_label</th>
+<th style="text-align: left;">layer</th>
+<th style="text-align: left;">comparison</th>
+<th style="text-align: right;">diff</th>
+<th style="text-align: right;">fold</th>
+<th style="text-align: left;">higher_in</th>
+<th style="text-align: right;">FDR</th>
+<th style="text-align: left;">changed</th>
+<th style="text-align: left;">estimate_type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">-2.42</td>
+<td style="text-align: right;">5.4</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">1.7e-02</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">-2.71</td>
+<td style="text-align: right;">6.5</td>
+<td style="text-align: left;">SN</td>
+<td style="text-align: right;">2.8e-03</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">-0.29</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: left;">SN</td>
+<td style="text-align: right;">1.0e+00</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">7.8e-01</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">-0.57</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: left;">SN</td>
+<td style="text-align: right;">3.6e-03</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_01690 S33</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">-0.69</td>
+<td style="text-align: right;">1.6</td>
+<td style="text-align: left;">SN</td>
+<td style="text-align: right;">7.4e-04</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">2.43</td>
+<td style="text-align: right;">5.4</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">3.3e-03</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">1.4</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">1.0e+00</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">-1.98</td>
+<td style="text-align: right;">3.9</td>
+<td style="text-align: left;">SN</td>
+<td style="text-align: right;">9.0e-03</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">-0.31</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">2.1e-01</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">0.43</td>
+<td style="text-align: right;">1.3</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">1.2e-02</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_05655 T21</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">0.74</td>
+<td style="text-align: right;">1.7</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">9.8e-05</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">-2.80</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">3.2e-02</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">1.4</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">1.0e+00</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">phosphosite</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">3.25</td>
+<td style="text-align: right;">9.5</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">3.2e-03</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs 15 min</td>
+<td style="text-align: right;">-1.87</td>
+<td style="text-align: right;">3.7</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">1.0e-07</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">TSB vs ~15 h</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">TSB</td>
+<td style="text-align: right;">9.4e-01</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B7H15_14290 S194</td>
+<td style="text-align: left;">protein</td>
+<td style="text-align: left;">15 min vs ~15 h</td>
+<td style="text-align: right;">1.90</td>
+<td style="text-align: right;">3.7</td>
+<td style="text-align: left;">SNpulse</td>
+<td style="text-align: right;">0.0e+00</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">observed</td>
+</tr>
+</tbody>
+</table>
 </div>
+</div>
+<p>(<code>SNpulse</code> = 15 min PASN, <code>SN</code> = ~15 h PASN.)</p>
+</section>
+<section id="site-vs-protein-after-15-min-and-15-h" class="level3">
+<h3 class="anchored" data-anchor-id="site-vs-protein-after-15-min-and-15-h">5.3 Site vs protein after 15 min and ~15 h</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fc <span class="ot">&lt;-</span> fc_all <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(contrast <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"TSB_vs_SNpulse_at_anc"</span>, <span class="st">"TSB_vs_SN_at_anc"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">time =</span> <span class="fu">factor</span>(<span class="fu">if_else</span>(contrast <span class="sc">==</span> <span class="st">"TSB_vs_SNpulse_at_anc"</span>, <span class="st">"15 min"</span>, <span class="st">"~15 h"</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"15 min"</span>, <span class="st">"~15 h"</span>)),</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>         <span class="co"># flip the sign: TSB_vs_X has diff &lt; 0 = higher in PASN</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">log2fc  =</span> <span class="sc">-</span>diff, <span class="at">lo =</span> <span class="sc">-</span>conf.high, <span class="at">hi =</span> <span class="sc">-</span>conf.low,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">changed =</span> FDR <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> <span class="fu">abs</span>(diff) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(fc, <span class="fu">aes</span>(log2fc, layer, <span class="at">colour =</span> layer)) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointrange</span>(<span class="fu">aes</span>(<span class="at">xmin =</span> lo, <span class="at">xmax =</span> hi, <span class="at">shape =</span> changed)) <span class="sc">+</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(site_label <span class="sc">~</span> time) <span class="sc">+</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">TRUE</span><span class="st">`</span> <span class="ot">=</span> <span class="dv">16</span>, <span class="st">`</span><span class="at">FALSE</span><span class="st">`</span> <span class="ot">=</span> <span class="dv">1</span>),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>                     <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">TRUE</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"changed"</span>, <span class="st">`</span><span class="at">FALSE</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"not changed"</span>)) <span class="sc">+</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">phosphosite =</span> <span class="st">"#CC3311"</span>, <span class="at">protein =</span> <span class="st">"#0077BB"</span>),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>                      <span class="at">guide =</span> <span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"log2 fold change PASN vs TSB (&gt; 0 = higher after PASN)"</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">shape =</span> <span class="cn">NULL</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"line = 95 % confidence interval; dashed = 2-fold"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analyses_15min_topic3_files/figure-html/fc-plot-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>Which sites are still changed after ~15 h? Does the protein explain the site change?</em></p>
+</section>
 </section>
 <section id="caveats" class="level2">
 <h2 class="anchored" data-anchor-id="caveats">6. Caveats</h2>
@@ -212,7 +571,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="sources">8. Sources</h2>
 <p><em>Papers, databases (UniProt IDs, STRING), and AI tools used – with what for.</em></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>R version 4.4.2 (2024-10-31 ucrt)
 Platform: x86_64-w64-mingw32/x64
@@ -238,9 +597,9 @@ other attached packages:
 loaded via a namespace (and not attached):
  [1] bit_4.6.0          gtable_0.3.6       jsonlite_1.9.0     crayon_1.5.3      
  [5] compiler_4.4.2     tidyselect_1.2.1   parallel_4.4.2     scales_1.4.0      
- [9] yaml_2.3.10        fastmap_1.2.0      R6_2.6.1           generics_0.1.4    
-[13] knitr_1.49         tibble_3.3.1       pillar_1.11.1      RColorBrewer_1.1-3
-[17] tzdb_0.5.0         rlang_1.2.0        utf8_1.2.6         stringi_1.8.4     
+ [9] yaml_2.3.10        fastmap_1.2.0      R6_2.6.1           labeling_0.4.3    
+[13] generics_0.1.4     knitr_1.49         tibble_3.3.1       pillar_1.11.1     
+[17] RColorBrewer_1.1-3 tzdb_0.5.0         rlang_1.2.0        stringi_1.8.4     
 [21] xfun_0.51          S7_0.2.2           bit64_4.8.0        cli_3.6.4         
 [25] withr_3.0.3        magrittr_2.0.3     digest_0.6.37      grid_4.4.2        
 [29] vroom_1.7.1        hms_1.1.4          lifecycle_1.0.5    vctrs_0.7.3       
