@@ -1,5 +1,5 @@
 ---
-title: "Topic 3: are the early phosphosites still changes after ~15h PASN"
+title: "Topic 3: Do early phosphosite changes persist after prolonged PASN exposure?"
 subtitle: "Bio253 HS2026 · group: 15min (names: simona_michelle) · topic 3"
 ---
 
