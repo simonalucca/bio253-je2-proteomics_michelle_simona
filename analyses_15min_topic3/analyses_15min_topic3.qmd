@@ -42,13 +42,14 @@ protein_dea <- read_dea("total", contrasts = contr)
 
 ## 4. Methods
 
-**Sites studied:** the three phosphosites that changed after 15 min in topic 1/2
-  (RpoY T21, 5'-nucleotidase S33, IsaA S194), selected by locus tag, residue and
-  position. We followed the same three sites at ~15 h and looked at the protein
-  each one is on.
-**Tools:** R with dplyr, tidyr, stringr, ggplot2, and the course helper
-  functions in `R/` (`read_dea()`, `read_abundances()`, `explain_contrast()`).
-  
+We analysed three phosphosites that showed significant changes after 15 minutes of PASN exposure in *S. aureus* JE2 (anc): B7H15_01690 S33, B7H15_05655 T21 and IsaA S194.
+
+Using the course-provided phosphoproteomics and total proteomics data, we compared TSB with 15-minute PASN exposure (SNpulse), TSB with approximately 15-hour exposure (SN), and SNpulse directly with SN.
+
+We examined normalised abundances across three biological replicates per condition and compared phosphosite changes with the corresponding protein abundances. Results were classified as changed when detected in at least 2/3 replicates in both conditions, based on observed estimates, and meeting FDR < 0.05 and |log2FC| > 1.
+
+Analyses and visualisations were performed in R using the course-provided functions and tidyverse packages.
+
 ## 5. Results
 
 ### 5.1 Raw values first
@@ -90,22 +91,10 @@ ggplot(raw, aes(medium, normalized_abundance)) +
        caption = "wild type JE2, n = 3; grey bar = mean; missing point = not detected")
 ```
 
-**Replicates:** all three proteins were detected in 3/3 replicates in every
-condition. The phosphosites T21 (B7H15_05655) and S33 (B7H15_01690) were also
-detected in 3/3 replicates everywhere. IsaA S194 (B7H15_14290) was missing in one
-TSB and one ~15 h replicate (2/3), so its fold changes rest on two values in
-these groups.
+All three phosphosites and their corresponding proteins met the reliability criterion (≥2/3 replicates per condition). Only IsaA S194 had missing phosphosite measurements (one each in TSB and SN). No obvious extreme outliers were observed.
 
-**Outliers:** the replicates group closely and no single sample stands out. The
-spread is largest for T21 after 15 min (about 1.6 log2 units between replicates),
-but all three values are clearly below TSB.
+The raw abundances suggest three different patterns: S33 remains elevated after both exposure durations, T21 decreases mainly after 15 minutes, and IsaA S194 increases after 15 minutes together with its corresponding protein. These patterns are examined quantitatively in Section 5.2.
 
-**First impression:** the raw values already show the three patterns tested in 5.2:
-* T21 drops after 15 min and is back near the TSB level after ~15 h.
-* S33 is higher after 15 min and stays high after ~15 h.
-* IsaA S194 and the IsaA protein both rise after 15 min and fall back after ~15 h.
-
-The proteins of T21 and S33 change only slightly.
 
 ### 5.2 Fold changes of sites and proteins
 
@@ -129,12 +118,20 @@ fc_all <- bind_rows(
   left_join(select(labels, locus_tag, site_label), by = "locus_tag") |>
   left_join(n_obs, by = c("locus_tag", "layer")) |>
   # same rules as topic 1/2: >= 2/3 replicates in both groups, observed estimate
-  mutate(reliable = case_when(
-           contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
-           contrast == "TSB_vs_SN_at_anc"      ~ TSB >= 2 & SN >= 2,
-           contrast == "SNpulse_vs_SN_at_anc"  ~ SNpulse >= 2 & SN >= 2),
-         changed = reliable & estimate_type == "observed" &
-                   FDR < 0.05 & abs(diff) > 1)
+  
+mutate(
+  reliable = case_when(
+    contrast == "TSB_vs_SNpulse_at_anc" ~ TSB >= 2 & SNpulse >= 2,
+    contrast == "TSB_vs_SN_at_anc" ~ TSB >= 2 & SN >= 2,
+    contrast == "SNpulse_vs_SN_at_anc" ~ SNpulse >= 2 & SN >= 2
+  ),
+  changed = coalesce(
+    reliable & estimate_type == "observed" &
+      FDR < 0.05 & abs(diff) > 1,
+    FALSE
+  )
+)
+
 
 fc_all |>
   mutate(comparison = recode(contrast,
@@ -156,6 +153,9 @@ fc_all |>
 
 (`SNpulse` = 15 min PASN, `SN` = ~15 h PASN.)
 
+S33 showed a sustained increase in phosphosite abundance after both exposure durations, whereas T21 and IsaA S194 showed strong changes only after 15 minutes. Direct comparison of the exposure conditions confirmed substantial differences for T21 and IsaA S194, but not for S33. Total protein abundance changes were generally smaller than phosphosite changes, except for the early increase in IsaA.
+
+
 ### 5.3 Site vs protein after 15 min and ~15 h
 
 ```{r fc-plot, fig.width = 8, fig.height = 5}
@@ -175,62 +175,50 @@ ggplot(fc, aes(log2fc, layer, colour = layer)) +
                      labels = c(`TRUE` = "changed", `FALSE` = "not changed")) +
   scale_colour_manual(values = c(phosphosite = "#CC3311", protein = "#0077BB"),
                       guide = "none") +
-  labs(x = "log2 fold change PASN vs TSB (> 0 = higher after PASN)",
-       y = NULL, shape = NULL,
-       caption = "line = 95 % confidence interval; dashed = 2-fold")
+labs(
+  x = "log2 fold change PASN vs TSB (> 0 = higher after PASN)",
+  y = NULL,
+  shape = NULL,
+  caption = "Horizontal bars = 95% confidence intervals; solid vertical line = no change; dashed lines = 2-fold thresholds"
+)
 ```
 
-*Which sites are still changed after ~15 h? Does the protein explain the site change?*
+The phosphosite changes were generally larger than the corresponding protein changes. S33 remained strongly elevated at both exposure durations, while T21 showed a predominantly early response. The early increase in IsaA S194 coincided with increased IsaA protein abundance, suggesting that total protein abundance may contribute to its phosphosite signal.
+
 
 
 ## 6. Caveats
 
-Several limitations should be considered when interpreting the results of this exploratory analysis.
+1. **Limited data:** Only three previously identified phosphosites were analysed, with three biological replicates per condition. IsaA S194 had missing measurements, which may affect the precision of the results.
 
-1. **Selection of phosphosites.** Only three phosphosites were investigated because they had already been identified as significantly changed after 15 minutes of PASN exposure. Therefore, this analysis describes the behaviour of selected candidates rather than the overall phosphoproteome. The selection based on early significance may also favour sites with unusually large estimated early effects.
+2. **Phosphosite vs protein abundance:** Changes in phosphosite abundance may partly reflect changes in total protein abundance, as observed for IsaA S194. Phosphorylation occupancy and protein activity cannot be determined directly.
 
-2. **Limited biological replicates and missing values.** The dataset contains three biological replicates per condition. Missing measurements and imputation may influence the estimated fold changes and statistical significance. We therefore considered replicate coverage and distinguished observed from imputed DEA estimates. However, limited replication reduces the precision of the estimated responses.
+3. **Statistical interpretation:** We used FDR < 0.05 and |log2FC| > 1 to classify changes. Results not meeting these criteria do not necessarily indicate the absence of a biological effect. Because the sites were selected based on their early changes, this is an exploratory analysis rather than independent validation.
 
-3. **Phosphosite abundance versus phosphorylation occupancy.** Phosphosite abundance can be influenced by both phosphorylation and total protein abundance. For example, the early increase in IsaA S194 coincides with an increase in total IsaA protein. Although we compared phosphosite and protein abundances, we cannot directly determine phosphorylation occupancy or kinase activity from these measurements.
-
-4. **Statistical interpretation.** We used FDR < 0.05 and |log2FC| > 1 to identify statistically significant changes of substantial magnitude. A result that does not meet these criteria does not necessarily indicate the absence of a biological effect. Furthermore, the three phosphosites were selected based on their significant early changes, making this an exploratory follow-up rather than an independent validation.
-
-5. **Comparison of exposure conditions.** The 15-minute and approximately 15-hour measurements represent two experimental exposure conditions rather than a continuous time course. Differences may reflect exposure duration as well as changes in growth state or other experimental conditions. With only these two exposure durations, we cannot determine exactly when the observed changes occurred.
-
-6. **Protein annotation and functional interpretation.** The biological functions of the selected proteins provide useful context, but changes in phosphosite abundance do not directly demonstrate changes in protein activity or function. In particular, the proposed RpoY annotation for B7H15_05655 should be verified before drawing functional conclusions.
-
-Overall, these limitations mean that the observed patterns should be interpreted as evidence of different phosphosite abundance responses under the tested conditions, rather than proof of specific phosphorylation mechanisms.
-
+4. **Exposure duration:** Only two PASN exposure durations were compared (15 min and ~15 h). Therefore, we cannot determine when the changes occurred or exclude effects of other experimental differences.
 
 
 ## 7. Conclusion and next steps
 
-The three phosphosites identified as significantly changed after 15 minutes of PASN exposure showed different patterns after approximately 15 hours.
+The three phosphosites showed different responses to prolonged PASN exposure. **5'-nucleotidase S33** remained elevated after both 15 minutes and ~15 hours, whereas **B7H15_05655 T21** and **IsaA S194** showed strong early changes that were not maintained after ~15 hours.
 
-**5'-nucleotidase S33** remained significantly elevated at both exposure durations (5.4-fold and 6.5-fold relative to TSB). The corresponding protein showed smaller abundance changes, suggesting that protein abundance alone may not explain the phosphosite response.
+The early increase in IsaA S194 coincided with increased total IsaA protein abundance, while the S33 phosphosite response was substantially larger than the corresponding protein change. This suggests that phosphosite abundance changes cannot always be explained by total protein abundance alone.
 
-**B7H15_05655 T21** showed a strong decrease after 15 minutes (5.4-fold lower than TSB), but only a small, non-significant difference after approximately 15 hours. The direct comparison between the two exposure conditions was significant (FDR = 0.009), consistent with an early response that is not maintained.
-
-**IsaA S194** increased approximately 7-fold after 15 minutes, together with a 3.7-fold increase in total IsaA protein abundance. Neither increase was maintained after approximately 15 hours. The direct phosphosite comparison between the two exposure conditions was significant (FDR = 0.0032).
-
-Overall, the results indicate that early phosphosite abundance changes are not uniformly maintained during prolonged PASN exposure. One site showed a sustained increase, whereas two showed significant differences between the exposure conditions.
-
-Further analyses could investigate the biological functions of these candidates, compare phosphosite and protein abundance changes more quantitatively, and include additional time points to characterise their response dynamics.
+Overall, the results indicate both sustained and transient-like responses to PASN exposure. Additional time points and further investigation of the selected proteins could help clarify the underlying mechanisms.
 
 
 ## 8. Sources
 
 * Course data: prolfquapp DEA results and normalised abundances (FGCZ),
   *S. aureus* JE2 genome CP020619.1.
-* UniProt (NCTC 8325 orthologs): Q2FZG8 (RpoY, RNA polymerase subunit epsilon;
-  B7H15_05655), Q2G170 (5'-nucleotidase, lipoprotein e(P4) family; B7H15_01690),
-  Q2FV52 (IsaA; B7H15_14290).
+* UniProt (NCTC 8325 ortholog mappings from course data): Q2FZG8 (RpoY, B7H15_05655; annotated as hypothetical protein in JE2), Q2G170 (5'-nucleotidase, B7H15_01690), Q2FV52 (IsaA, B7H15_14290).
 * STRING v12 (functional partners, see topic 2 notebook).
 * Schwyter et al. 2025, mSystems, doi:10.1128/msystems.00262-25 (JE2 in PASN, ~18 h).
 * Huemer et al. 2023, Sci. Signal. 16, eabj8194, doi:10.1126/scisignal.abj8194
   (phosphoproteome changes in *S. aureus* without total-proteome changes).
-* AI: Claude (Anthropic) suggested the code for sections 5.1–5.3 and drafted
-  sections 6–8; we ran the code and checked the numbers and plots ourselves.
+* **AI assistance:** Claude (Anthropic) and ChatGPT (OpenAI) were used to assist with R code development, scientific interpretation and writing. The analyses, results and final report were reviewed by the authors.
+
+
 
 ```{r session}
 sessionInfo()
