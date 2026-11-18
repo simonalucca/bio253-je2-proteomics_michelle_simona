@@ -1,0 +1,105 @@
+---
+title: "notebook_17_11_26_15min_group"
+output: html_document
+---
+
+
+# 2026-11-17 – group 15min (Simona, Michelle)
+
+## Question for today
+
+1. Michelle (topic 1, combined): bring the proteome and phospho results together
+   and finalise the topic 1 notebook.
+2. Simona + Michelle (topic 3): are the three phosphosites that changed after
+   15 min still changed after ~15 h PASN, and does the protein explain the
+   site change?
+
+## What we did
+
+**Organisation**
+
+- committed the notebook of 13.11 (`notebook/2026-11-13_15min.Rmd`)
+- made the topic 3 folder and notebook `analyses_15min_topic3/analyses_15min_topic3.qmd`
+- re-rendered the combined and topic 2 HTML outputs
+- fixed the title typo in `analyses_15min_proteome/07_15min_topic1_proteom.qmd`
+  ("15mi" -> "15min")
+
+**Michelle – topic 1 combined** `analyses_15min_combined/01_combined_topic 1_final.qmd`
+
+- final combined notebook: shared definitions of "reliable" and "changed",
+  fraction of changed proteins vs phosphosites (5.1), one-sided Fisher test (5.2),
+  site vs protein for the 3 early sites (5.3), raw values (5.4), caveats,
+  conclusion, sources
+- extra section 9: relaxing the 2/3 replicate filter, presence/absence patterns,
+  detection depth per sample, strongest 3/3 vs 0/3 candidates
+
+**Topic 3 (together)** `analyses_15min_topic3/analyses_15min_topic3.qmd`
+
+- selected the 3 early sites by locus tag, residue and position
+  (B7H15_01690 S33, B7H15_05655 T21, B7H15_14290 S194)
+- used three contrasts: `TSB_vs_SNpulse_at_anc` (15 min),
+  `TSB_vs_SN_at_anc` (~15 h) and `SNpulse_vs_SN_at_anc` (15 min vs ~15 h)
+- 5.1 raw values: per-sample abundances of sites and proteins (wild type) and a
+  replicate-count table
+- 5.2 fold-change table for sites and proteins, with the same filter as topic 1/2
+  (≥ 2/3 replicates in both groups, observed estimate, FDR < 0.05, |log2FC| > 1)
+- 5.3 plot of site vs protein log2FC with 95 % CI, 15 min vs ~15 h
+- wrote caveats (6), conclusion (7) and sources (8); rendered and pushed (Michelle)
+
+## Results (key numbers)
+
+**Topic 1 (combined)**
+
+- after 15 min: 3/131 reliable phosphosites (2.3 %) vs 35/2003 proteins (1.7 %)
+  changed; one-sided Fisher p = 0.416 -> **hypothesis not supported**
+- after ~15 h: 18.9 % of proteins and 11.8 % of phosphosites changed -> much
+  larger response after long exposure
+- 2 of the 3 early sites (S33, T21) change without their protein changing
+
+**Topic 3** (all estimates `observed`; `diff` < 0 = higher after PASN)
+
+- replicates: all 3 proteins and sites S33 and T21 in 3/3 everywhere;
+  IsaA S194 only 2/3 in TSB and in ~15 h
+- **5'-nucleotidase S33 – stays up:** 5.4x higher after 15 min (FDR 0.017),
+  6.5x after ~15 h (FDR 0.003); 15 min vs ~15 h not different (FDR 1.0).
+  Protein unchanged at 15 min, only 1.5x up after ~15 h (below the 2-fold cut-off)
+- **RpoY T21 (B7H15_05655) – early, transient decrease:** 5.4x lower after 15 min
+  (FDR 0.003), back near TSB after ~15 h (1.4x, FDR 1.0); 15 min vs ~15 h
+  changed (3.9x, FDR 0.009). Protein changes < 2-fold at all times
+- **IsaA S194 – follows the protein:** site 7.0x up after 15 min (FDR 0.032),
+  protein 3.7x up (FDR 1e-7); after ~15 h both back at TSB level
+  (site 1.4x, protein 1.0x); 15 min vs ~15 h changed for both
+- overall: early site changes are **not uniformly maintained** – 1 sustained (S33),
+  2 transient (T21, S194)
+
+## Problems / surprises
+
+- section 2 (hypothesis H1 / H0 / prediction) of the topic 3 notebook is still
+  the template placeholder -> fill in
+- the 3 sites were chosen because they changed at 15 min -> topic 3 is an
+  exploratory follow-up, not an independent validation
+- IsaA S194 rests on 2 values in TSB and ~15 h
+- the topic 1 count is still 35 proteins at 15 min -> the FGCZ contaminant
+  (`zz_Y-FGCZCont00173_`) should be removed (34 real proteins), check whether the
+  percentages / Fisher test in the combined notebook change
+- commits from Simona's computer show up as author "Dein Name" -> set the git
+  user name in RStudio
+  (`git config user.name "..."`, `git config user.email "..."`)
+
+*(add anything else that went wrong on Tuesday)*
+
+## AI use
+
+Claude (Anthropic) suggested the code for sections 5.1–5.3 of the topic 3
+notebook and drafted sections 6–8; we ran the code and checked the numbers and
+plots ourselves. *(add/adjust what else you used on Tuesday)*
+
+## Next steps
+
+- topic 3: write the hypothesis section (2) and the answer to the question under
+  the plot in 5.3
+- topic 1: remove the contaminant and update the numbers in the combined notebook
+- fix the git author name
+- abstract (200–300 words) by Friday, poster with Michelle by Sunday,
+  presentation Tuesday afternoon (24.11.)
+- always pull before working, push after committing
