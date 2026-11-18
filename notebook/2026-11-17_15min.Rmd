@@ -21,8 +21,6 @@ output: html_document
 - committed the notebook of 13.11 (`notebook/2026-11-13_15min.Rmd`)
 - made the topic 3 folder and notebook `analyses_15min_topic3/analyses_15min_topic3.qmd`
 - re-rendered the combined and topic 2 HTML outputs
-- fixed the title typo in `analyses_15min_proteome/07_15min_topic1_proteom.qmd`
-  ("15mi" -> "15min")
 
 **Michelle – topic 1 combined** `analyses_15min_combined/01_combined_topic 1_final.qmd`
 
@@ -82,17 +80,13 @@ output: html_document
 - the topic 1 count is still 35 proteins at 15 min -> the FGCZ contaminant
   (`zz_Y-FGCZCont00173_`) should be removed (34 real proteins), check whether the
   percentages / Fisher test in the combined notebook change
-- commits from Simona's computer show up as author "Dein Name" -> set the git
-  user name in RStudio
-  (`git config user.name "..."`, `git config user.email "..."`)
 
-*(add anything else that went wrong on Tuesday)*
 
 ## AI use
 
 Claude (Anthropic) suggested the code for sections 5.1–5.3 of the topic 3
 notebook and drafted sections 6–8; we ran the code and checked the numbers and
-plots ourselves. *(add/adjust what else you used on Tuesday)*
+plots ourselves.
 
 ## Next steps
 
@@ -102,4 +96,4 @@ plots ourselves. *(add/adjust what else you used on Tuesday)*
 - fix the git author name
 - abstract (200–300 words) by Friday, poster with Michelle by Sunday,
   presentation Tuesday afternoon (24.11.)
-- always pull before working, push after committing
+
