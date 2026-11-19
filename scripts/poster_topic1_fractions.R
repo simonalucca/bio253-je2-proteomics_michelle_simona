@@ -76,36 +76,28 @@ message("one-sided Fisher test (15 min, phosphosites > proteins): p = ",
         signif(fisher_p, 2))
 
 # ---- 4. Figure ---------------------------------------------------------------
-EXPOSURE_COLOURS <- c("15 min PASN pulse" = "#3461C1", "~15 h PASN" = "#D65A31")
+# One colour per data layer (same in both exposures): burgundy tones,
+# dark = proteins, light rose = phosphosites (stronger contrast for the printed poster).
+LAYER_COLOURS <- c("Proteins" = "#6A1424", "Phosphosites" = "#EDB8BE")
 
-ymax <- max(fractions$fraction) * 1.35
+ymax <- max(fractions$fraction) * 1.3
+dodge <- position_dodge(width = 0.8)
 
-fig <- ggplot(fractions, aes(exposure, fraction, fill = exposure, alpha = layer)) +
-  geom_col(position = position_dodge(width = 0.8), width = 0.72,
-           colour = "white", linewidth = 0.8) +
-  geom_text(aes(label = label, group = layer),
-            position = position_dodge(width = 0.8), vjust = -0.25,
-            size = BASE_SIZE / 3.6, lineheight = 0.9, alpha = 1, colour = "grey15") +
-  # Fisher test bracket over the 15 min bars
-  annotate("segment", x = 0.8, xend = 1.2,
-           y = max(early$fraction) + 0.035, yend = max(early$fraction) + 0.035,
-           colour = "grey30", linewidth = 0.6) +
-  annotate("text", x = 1, y = max(early$fraction) + 0.05,
-           label = paste0("n.s. (p = ", signif(fisher_p, 2), ")"),
-           size = BASE_SIZE / 3.6, colour = "grey30") +
-  scale_fill_manual(values = EXPOSURE_COLOURS, guide = "none") +
-  scale_alpha_manual(values = c("Proteins" = 1, "Phosphosites" = 0.5), name = NULL) +
+fig <- ggplot(fractions, aes(exposure, fraction, fill = layer)) +
+  geom_col(position = dodge, width = 0.75, colour = "white", linewidth = 0.8) +
+  geom_text(aes(label = label), position = dodge, vjust = -0.3,
+            size = BASE_SIZE / 3.6, lineheight = 0.9, colour = "grey15") +
+  scale_fill_manual(values = LAYER_COLOURS, name = NULL) +
   scale_y_continuous(labels = scales::percent, limits = c(0, ymax),
                      expand = expansion(mult = c(0, 0))) +
   labs(x = NULL, y = "changed / reliably measured",
-       caption = "wild type JE2, n = 3 per group  |  FDR < 0.05, > 2-fold, detected in ≥ 2/3 replicates") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey35"))) +
+       caption = "wild type JE2, n = 3 per group  |  FDR < 0.05, > 2-fold, detected in \u2265 2/3 replicates") +
   theme_minimal(base_size = BASE_SIZE) +
   theme(legend.position = "top",
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         axis.text.x = element_text(colour = "black", face = "bold"),
-        plot.caption = element_text(colour = "grey45", size = BASE_SIZE * 0.55))
+        plot.caption = element_text(colour = "grey40", size = BASE_SIZE * 0.75))
 
 ggsave(file.path(REPO_ROOT, "reports", "poster_topic1_fractions.pdf"), fig,
        width = 24, height = 18, units = "cm")

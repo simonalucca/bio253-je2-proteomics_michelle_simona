@@ -177,7 +177,7 @@ short_df <- hits |>
   inner_join(key_short, by = "staa8_uniprot") |>
   mutate(block = factor(block, levels = names(BLOCK_COLOURS)),
          short = str_remove(short, " \\(.*\\)"),        # "IsaA (box 5)" -> "IsaA"
-         short = if_else(staa8_uniprot == "Q2FV52", "IsaA *", short),
+         short = if_else(staa8_uniprot == "Q2FV52", "IsaA", short),
          short = if_else(staa8_uniprot == "Q2FWM8", "Hld", short),
          short = reorder(short, log2fc_pasn),
          up    = log2fc_pasn > 0,
@@ -213,13 +213,13 @@ fig_a_short <- ggplot(short_df, aes(log2fc_pasn, short)) +
   scale_y_discrete(expand = expansion(add = c(0.7, 1.4))) +   # room for group name
   labs(x = "fold change after 15 min PASN vs TSB\n(left = lower, right = higher after PASN)",
        y = NULL,
-       caption = "12 of 34 changed proteins shown  |  * phosphosite in box 5") +
+       caption = NULL) +
   theme_minimal(base_size = BASE_SIZE) +
   theme(panel.grid = element_blank(),
         strip.text = element_blank(),
         axis.text.y = element_text(colour = "black", face = "bold"),
         axis.text.x = element_text(colour = "grey35"),
-        plot.caption = element_text(colour = "grey45", size = BASE_SIZE * 0.6),
+        plot.caption = element_text(colour = "grey40", size = BASE_SIZE * 0.8),
         panel.spacing.y = unit(0.5, "lines"))
 
 ggsave(file.path(REPO_ROOT, "reports", "poster_box4_A_short.pdf"), fig_a_short,
