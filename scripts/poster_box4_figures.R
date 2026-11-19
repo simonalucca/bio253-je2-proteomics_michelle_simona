@@ -154,49 +154,77 @@ ggsave(file.path(REPO_ROOT, "reports", "poster_box4_B_rawvalues.png"), fig_b,
 
 # ---- 5. Figure A-short: only the key proteins (for a smaller poster box) ----
 # 12 of the 34 proteins, chosen by biology (the story of box 4), not only by size.
+# 'role' = very short function, printed next to the bar (check in UniProt!).
 key_short <- tribble(
-  ~staa8_uniprot, ~block,
-  "Q2G1K9", "Fermentation",  # AdhE
-  "Q2G1D7", "Fermentation",  # PflA
-  "Q2G218", "Fermentation",  # Ldh1
-  "Q2G0G1", "Fermentation",  # Adh
-  "Q2FV02", "Fermentation",  # NrdD (anaerobic dNTP synthesis)
-  "Q2FV03", "Fermentation",  # NrdG
-  "Q2FWF8", "Cell wall",     # SceD
-  "O33599", "Cell wall",     # LytM
-  "Q2FV52", "Cell wall",     # IsaA (box 5)
-  "Q2G282", "Oxidative stress", # PerR
-  "Q2FWM8", "Virulence",        # Hld
-  "Q2FW51", "Virulence"         # Map-like
+  ~staa8_uniprot, ~block,             ~role,
+  "Q2G1K9", "Fermentation",           "ethanol",               # AdhE
+  "Q2G1D7", "Fermentation",           "formate",               # PflA
+  "Q2G218", "Fermentation",           "lactate",               # Ldh1
+  "Q2G0G1", "Fermentation",           "ethanol",               # Adh
+  "Q2FV02", "Fermentation",           "DNA synthesis w/o O2",  # NrdD
+  "Q2FV03", "Fermentation",           "activates NrdD",        # NrdG
+  "Q2FWF8", "Cell wall",              "remodelling",           # SceD
+  "O33599", "Cell wall",              "autolysin",             # LytM
+  "Q2FV52", "Cell wall",              "autolysin",             # IsaA (box 5)
+  "Q2G282", "Oxidative stress",       "H2O2 sensor",           # PerR
+  "Q2FWM8", "Virulence",              "toxin (agr)",           # Hld
+  "Q2FW51", "Virulence",              "immune evasion"         # Map-like
 )
 BLOCK_COLOURS <- c("Fermentation" = "#7A1F2B", "Cell wall" = "#5B4A8B",
-                   "Oxidative stress" = "grey45", "Virulence" = "#1B7F79")
+                   "Oxidative stress" = "#6B6B6B", "Virulence" = "#1B7F79")
 
-fig_a_short <- hits |>
+short_df <- hits |>
   inner_join(key_short, by = "staa8_uniprot") |>
   mutate(block = factor(block, levels = names(BLOCK_COLOURS)),
-         short = reorder(short, log2fc_pasn)) |>
-  ggplot(aes(log2fc_pasn, short, colour = block)) +
-  geom_vline(xintercept = 0, colour = "grey30") +
-  geom_segment(aes(x = 0, xend = log2fc_pasn, yend = short), linewidth = 1.4) +
-  geom_point(size = 5) +
-  # one block per function group; the strip label replaces a legend
+         short = str_remove(short, " \\(.*\\)"),        # "IsaA (box 5)" -> "IsaA"
+         short = if_else(staa8_uniprot == "Q2FV52", "IsaA *", short),
+         short = if_else(staa8_uniprot == "Q2FWM8", "Hld", short),
+         short = reorder(short, log2fc_pasn),
+         up    = log2fc_pasn > 0,
+         fc_text = paste0(fold_change, "\u00d7"))            # e.g. "18.2x"
+
+# group label in the top-left (or top-right for the 'down' block) of each panel
+block_labels <- short_df |>
+  group_by(block) |>
+  summarise(up = all(up), .groups = "drop") |>
+  mutate(x = if_else(up, -4.4, 5.3), hjust = if_else(up, 0, 1))
+
+fig_a_short <- ggplot(short_df, aes(log2fc_pasn, short)) +
+  # light tinted background per function group
+  geom_rect(data = block_labels, inherit.aes = FALSE,
+            aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, fill = block),
+            alpha = 0.08) +
+  geom_vline(xintercept = 0, colour = "grey35", linewidth = 0.6) +
+  geom_segment(aes(x = 0, xend = log2fc_pasn, yend = short, colour = block),
+               linewidth = 2.2, lineend = "round") +
+  geom_point(aes(fill = block), shape = 21, colour = "white", stroke = 1.2, size = 7) +
+  # fold change printed at the end of each bar
+  geom_text(aes(label = fc_text, hjust = if_else(up, -0.35, 1.35), colour = block),
+            size = BASE_SIZE / 3.4, fontface = "bold") +
+  # group name inside each panel
+  geom_text(data = block_labels, inherit.aes = FALSE,
+            aes(x = x, y = Inf, label = block, hjust = hjust, colour = block),
+            vjust = 1.4, size = BASE_SIZE / 3, fontface = "bold") +
   facet_grid(block ~ ., scales = "free_y", space = "free_y") +
   scale_colour_manual(values = BLOCK_COLOURS, guide = "none") +
+  scale_fill_manual(values = BLOCK_COLOURS, guide = "none") +
   scale_x_continuous(breaks = fold_breaks, labels = fold_labels,
-                     limits = c(-3.5, 4.5)) +
+                     limits = c(-4.5, 5.4)) +   # extra room for the fold-change labels
+  scale_y_discrete(expand = expansion(add = c(0.7, 1.4))) +   # room for group name
   labs(x = "fold change after 15 min PASN vs TSB\n(left = lower, right = higher after PASN)",
-       y = NULL, caption = "12 of 34 changed proteins shown") +
+       y = NULL,
+       caption = "12 of 34 changed proteins shown  |  * phosphosite in box 5") +
   theme_minimal(base_size = BASE_SIZE) +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.y = element_text(colour = "black"),
-        strip.text.y = element_text(angle = 0, hjust = 0, face = "bold"),
-        panel.spacing.y = unit(0.6, "lines"))
+  theme(panel.grid = element_blank(),
+        strip.text = element_blank(),
+        axis.text.y = element_text(colour = "black", face = "bold"),
+        axis.text.x = element_text(colour = "grey35"),
+        plot.caption = element_text(colour = "grey45", size = BASE_SIZE * 0.6),
+        panel.spacing.y = unit(0.5, "lines"))
 
 ggsave(file.path(REPO_ROOT, "reports", "poster_box4_A_short.pdf"), fig_a_short,
-       width = 28, height = 17, units = "cm")
+       width = 28, height = 22, units = "cm")
 ggsave(file.path(REPO_ROOT, "reports", "poster_box4_A_short.png"), fig_a_short,
-       width = 28, height = 17, units = "cm", dpi = 300, bg = "white")
+       width = 28, height = 22, units = "cm", dpi = 300, bg = "white")
 
 message("Done: figures written to reports/poster_box4_*")
