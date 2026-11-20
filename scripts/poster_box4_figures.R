@@ -200,7 +200,7 @@ fig_a_short <- ggplot(short_df, aes(log2fc_pasn, short)) +
   geom_point(aes(fill = block), shape = 21, colour = "white", stroke = 1.2, size = 7) +
   # fold change printed at the end of each bar
   geom_text(aes(label = fc_text, hjust = if_else(up, -0.35, 1.35), colour = block),
-            size = BASE_SIZE / 3.4, fontface = "bold") +
+            size = BASE_SIZE / 2.5, fontface = "bold") +
   # group name inside each panel
   geom_text(data = block_labels, inherit.aes = FALSE,
             aes(x = x, y = Inf, label = block, hjust = hjust, colour = block),
@@ -209,7 +209,7 @@ fig_a_short <- ggplot(short_df, aes(log2fc_pasn, short)) +
   scale_colour_manual(values = BLOCK_COLOURS, guide = "none") +
   scale_fill_manual(values = BLOCK_COLOURS, guide = "none") +
   scale_x_continuous(breaks = fold_breaks, labels = fold_labels,
-                     limits = c(-4.5, 5.4)) +   # extra room for the fold-change labels
+                     limits = c(-5.4, 6.3)) +   # extra room for the fold-change labels
   scale_y_discrete(expand = expansion(add = c(0.7, 1.4))) +   # room for group name
   labs(x = "fold change after 15 min PASN vs TSB\n(left = lower, right = higher after PASN)",
        y = NULL,

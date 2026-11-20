@@ -86,7 +86,8 @@ dodge <- position_dodge(width = 0.8)
 fig <- ggplot(fractions, aes(exposure, fraction, fill = layer)) +
   geom_col(position = dodge, width = 0.75, colour = "white", linewidth = 0.8) +
   geom_text(aes(label = label), position = dodge, vjust = -0.3,
-            size = BASE_SIZE / 3.6, lineheight = 0.9, colour = "grey15") +
+            size = BASE_SIZE / 3.0, lineheight = 0.9, colour = "grey15",
+            fontface = "bold") +
   scale_fill_manual(values = LAYER_COLOURS, name = NULL) +
   scale_y_continuous(labels = scales::percent, limits = c(0, ymax),
                      expand = expansion(mult = c(0, 0))) +
@@ -96,8 +97,13 @@ fig <- ggplot(fractions, aes(exposure, fraction, fill = layer)) +
   theme(legend.position = "top",
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
+        # bold throughout: the poster is read from ~1.5 m away
         axis.text.x = element_text(colour = "black", face = "bold"),
-        plot.caption = element_text(colour = "grey40", size = BASE_SIZE * 0.75))
+        axis.text.y = element_text(colour = "grey20", face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        legend.text = element_text(face = "bold"),
+        plot.caption = element_text(colour = "grey30", face = "bold",
+                                    size = BASE_SIZE * 0.8))
 
 ggsave(file.path(REPO_ROOT, "reports", "poster_topic1_fractions.pdf"), fig,
        width = 24, height = 18, units = "cm")

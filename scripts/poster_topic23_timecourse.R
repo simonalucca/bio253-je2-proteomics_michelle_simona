@@ -94,8 +94,13 @@ fig <- ggplot(plot_df, aes(time, log2fc, colour = layer, group = layer)) +
         panel.grid.minor = element_blank(),
         panel.spacing.x = unit(2, "lines"),
         strip.text = element_text(face = "bold", size = BASE_SIZE * 0.95),
-        axis.text.x = element_text(colour = "black"),
-        plot.caption = element_text(colour = "grey40", size = BASE_SIZE * 0.7))
+        # bold throughout: the poster is read from ~1.5 m away
+        axis.text.x = element_text(colour = "black", face = "bold"),
+        axis.text.y = element_text(colour = "grey20", face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        legend.text = element_text(face = "bold"),
+        plot.caption = element_text(colour = "grey25", face = "bold",
+                                    size = BASE_SIZE * 0.72))
 
 ggsave(file.path(REPO_ROOT, "reports", "poster_topic23_timecourse.pdf"), fig,
        width = 36, height = 16, units = "cm")
