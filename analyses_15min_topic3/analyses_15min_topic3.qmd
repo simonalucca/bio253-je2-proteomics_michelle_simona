@@ -14,10 +14,12 @@ source("../R/setup.R")
 
 ## 2. Hypothesis
 
-* **H1:** …
-* **H0:** …
-* **Prediction:** which contrast / sites / proteins, which sign of `diff`, which
-  minimal effect size would you call relevant? (Write this *before* looking.)
+We hypothesize that phosphorylation is involved in the early response to PASN and that a larger proportion of reliably measured phosphosites than proteins will show significant changes after 15 minutes.
+
+* **H1:** The proportion of significantly changed phosphosites after 15 minutes is greater than the proportion of significantly changed proteins.
+* **H0:** The proportion of significantly changed phosphosites is not greater than the proportion of significantly changed proteins.
+
+We additionally expect more extensive changes in protein abundance after prolonged exposure.
 
 ```{r contrast-meaning}
 # Check the direction of the contrast you will use, e.g.
