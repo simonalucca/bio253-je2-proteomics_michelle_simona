@@ -93,20 +93,19 @@ output: html_document
   Q2FZA8, EssG, Q2G1V8, tautomerase
 - AdhE 18x in 15 min is surprisingly large -> check whether it was near the
   detection limit in TSB
-- we both pushed in the morning -> merge commits; pull before working
 
-*(add anything else that went wrong on Friday)*
+
+
 
 ## AI use
 
-*Fill in what you used on Friday, e.g.:* Claude (Anthropic): help with the
+Claude (Anthropic): help with the
 UniProt / STRING look-up and drafting section 9 of notebook 08 and sections 8–9 of
 the topic 2 notebook. We checked the functions in UniProt / STRING ourselves.
 
 ## Next steps
 
-- notebook 08: remove the contaminant (34 proteins), confirm functions in UniProt /
-  AureoWiki (Q2FW51, AraC regulator, VOC proteins), fill in caveats and conclusion
+
 - check whether SodA, KatA, AhpC, CydA and Rot already change after 15 min
 - topic 3: are the 3 early phosphosites and their proteins still changed after ~15 h?
 - align the replicate-count source for phosphosites (122 vs 131)

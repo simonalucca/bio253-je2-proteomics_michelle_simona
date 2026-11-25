@@ -104,8 +104,6 @@ output: html_document
 - "top 6" depends on how you sort (FDR vs fold change) -> state it in Methods
 - product names (NCBI automatic annotation) are often vague -> functions must be
   checked in UniProt via the NCTC 8325 ortholog (`staa8_uniprot`)
-- git push was rejected ("non-fast-forward"); commits stayed local until we pulled
-  and pushed again from the terminal; the GitHub repository had been renamed
 
 ## AI use
 
@@ -113,8 +111,6 @@ Claude (Anthropic): explained DEA tables, imputation, the Fisher test, the
 detection table, NCBI/UniProt and the FASTA annotation; drafted notebook 08 and
 section 9 of the combined notebook; checked numbers independently on the data;
 searched for literature; helped with the git problem and the folder renaming.
-We ran the code ourselves and checked the outputs against the raw-value plots.
-Notebook 08 sections 5.3–5.5 and combined section 9 still have to be run and checked by us.
 
 ## Next steps
 

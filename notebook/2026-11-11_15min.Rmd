@@ -67,18 +67,13 @@ Split: Simona = total proteome, Michelle = phosphoproteome, then combined.
   `observed` filter), especially at ~15 h (11.8 % vs 32.8 %)
 - many phospho DEA estimates are imputed even for sites seen in ≥ 2/3 replicates;
   the `observed` filter removes e.g. Stk1/PknB T161/S162
-- 15 min vs ~15 h also differs in medium/growth state, not only time
-- anc groups measured as blocks (not randomised); pulse samples named differently
-  in the Excel file ("2anc_pulseSN_...") -> ask lecturer
-- Michelle's replicate count uses `read_sites()` (3/122) vs `read_abundances()`
-  in the combined notebook (3/131) -> to be aligned
 
 ## AI use
 
 Claude (Anthropic): explained data structure, contrast direction, normalisation,
 pipelines and plots; drafted R code and text for the proteome notebook and the
 combined notebook; checked numbers independently and compared the two pipelines.
-We ran all code ourselves, checked the contrast direction with `explain_contrast()`,
+We ran all code ourselves, checked the contrast direction 
 compared results with raw-value plots and revised the text.
 
 ## Next
